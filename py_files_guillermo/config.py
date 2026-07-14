@@ -30,10 +30,10 @@ PERFILES={
     }
 }
 
-JSON_SCHEMA_CHECKLIST = '''
-Devuelve SOLO un JSON con estas claves:
-- 'empleado_id':
-- 'dia':
-- 'tareas':
-- 'mensaje_resumen':
-'''
+# JSON_SCHEMA_CHECKLIST = '''
+# Devuelve SOLO un JSON con estas claves:
+# - 'empleado_id':
+# - 'dia':
+# - 'tareas':
+# - 'mensaje_resumen':
+# '''
