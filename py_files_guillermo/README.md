@@ -32,9 +32,15 @@
 ```text
 [OK] Turno procesado: perfil_activo
 ===================================
-R: respuesta
-FAQs: [faq_01,faq_03]
-Docs: [doc_02]
+
+respuesta
+
+FAQs: [faq_01(pregunta),faq_03]
+Docs: [doc_02(titulo)]
+
+latencia: 
+tokens entrada:
+tokens salida:
 ```
 
 # Estructura Json Checklist
