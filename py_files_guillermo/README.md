@@ -3,7 +3,8 @@
 {
     "pregunta": "pregunta",
     "respuesta": "respuesta",
-    "faqs": ["faq_01","faq_03"]
+    "faqs": ["faq_01","faq_03"],
+    "docs":["doc_02"]
 }
 ```
 
@@ -11,22 +12,29 @@
 ```json
 {
     "status":"ok",
-    "message":"Pregunta respondida",
+    "message":"Turno procesado",
     "data":{
-        "pregunta": "pregunta",
+        "perfil": "perfil_activo",
         "respuesta": "respuesta",
-        "faqs": ["faq_01","faq_03"]
+        "faqs": ["faq_01","faq_03"],
+        "docs":["doc_02"],
+        "metricas":{
+          "elapsed_ms":int,
+          "prompt_tokens":int | None,
+          "output_tokens":int | None,
+          "total_tokens":int | None
+        }
     }
 }
 ```
 
 # Impresion Chat
 ```text
-[OK] Pregunta respondida
-=========================
-P: pregunta
+[OK] Turno procesado: perfil_activo
+===================================
 R: respuesta
 FAQs: [faq_01,faq_03]
+Docs: [doc_02]
 ```
 
 # Estructura Json Checklist

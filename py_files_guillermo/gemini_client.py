@@ -75,7 +75,7 @@ def safe_generate(
 )-> tuple[str,MetricasLlamada]:
     tokens=count_tokens(prompt)
     if tokens>MAX_INPUT_TOKENS:
-        raise ValueError(f'Prompt supera el maximo permitido {tokens}/{MAX_INPUT_TOKENS}')
+        raise ValueError(f'Prompt supera el maximo de tokens permitido {tokens}/{MAX_INPUT_TOKENS}')
     if json_mode:
         return llamar_gemini_json(prompt,temperature=temperature)
     return llamar_gemini(prompt,temperature=temperature)

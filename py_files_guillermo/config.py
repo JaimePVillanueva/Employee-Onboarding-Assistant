@@ -1,7 +1,8 @@
 MODEL = "gemini-3-flash-preview"
 TEMPERATURE = 0.3
 TEMPERATURE_VULNERABLE = 0.3
-MAX_INPUT_TOKENS=100
+MAX_INPUT_TOKENS=8_000
+MAX_INPUT_CHARS=2_000
 WINDOW=4
 DOCS=3
 FAQS=2
@@ -28,6 +29,15 @@ PERFILES={
         ),
         'nivel_explicacion':'avanzado'
     }
+}
+
+ASSISTANT_CONFIG_DEFAULT = {
+    "model": MODEL,
+    "temperature": TEMPERATURE,
+    "perfil_activo": "mentor",
+    "max_turnos_historial": WINDOW,
+    "idioma_respuesta": "español",
+    "max_palabras": 200,
 }
 
 # JSON_SCHEMA_CHECKLIST = '''
