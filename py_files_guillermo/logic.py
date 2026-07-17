@@ -1,7 +1,11 @@
-from config import (ASSISTANT_CONFIG_DEFAULT,WINDOW)
+from copy import deepcopy
+from config import (DATA_DIR,ASSISTANT_CONFIG_DEFAULT)
+from context import (cargar_docs,cargar_faq,seleccion_doc,seleccion_faq,seleccion_empleado,cargar_empleados)
 from gemini_client import(MetricasLlamada,safe_generate)
 from prompts import (build_assistant_prompt)
 from state import (inicializar_estado)
+from validators import valid_data
+
 def respuesta_ok(message:str,data:dict)->dict:
     return{
         'status':'ok',
@@ -24,36 +28,67 @@ def _metricas_to_dict(metricas:MetricasLlamada)->dict:
         'total_tokens':metricas.total_tokens
     }
 
+
+def crear_estado_demo(empleado:dict|None=None) -> dict:
+    if not empleado:
+        return inicializar_estado(
+            {
+                "nombre": "",
+                "departamento": "engineering",
+                "rol": "Junior Software Engineer",
+                "modalidad": "",
+                "idioma_preferido": "es",
+                "perfil": "dev_junior",
+                "dia":1,
+            }
+        )
+    return inicializar_estado(
+            {
+                "nombre": empleado.get('nombre',''),
+                "departamento": empleado.get('departamento',''),
+                "rol": empleado.get('rol',''),
+                "modalidad": empleado.get('modalidad',''),
+                "idioma_preferido": empleado.get('idioma_preferido',''),
+                "perfil": empleado.get('perfil',''),
+                "dia":1,
+            }
+        )
+
+def initialize_assistant(perfil:str)->dict:
+    config = deepcopy(ASSISTANT_CONFIG_DEFAULT)
+    config["perfil_activo"] = perfil
+    return config
+
 def procesar_turno(
-    state:dict,
+    user_id:str,
     u_message:str,
-    assistant_config:dict | None = None,
-    faqs:list[dict] | None = None,
-    docs:list[dict] | None = None
 )->dict:
-    errores=[]
-    if not u_message.strip():
-        errores.append('Mensaje de usuario no puede estar vacio')
-    if not isinstance(state,dict):
-        errores.append('State tiene que ser un diccionario')
+    errores=(valid_data(u_message,user_id))
     if errores:
         return respuesta_error('Turno no procesado',errores=errores)
-    config= assistant_config or ASSISTANT_CONFIG_DEFAULT.copy()
-    ventana= max(config.get('max_turnos_historial',WINDOW),WINDOW)
+    
+    faqs=seleccion_faq(cargar_faq(DATA_DIR / 'faq_onboarding.json'),u_message)
+    docs=seleccion_doc(cargar_docs(DATA_DIR / 'onboarding_docs.json'),faqs=faqs,pregunta=u_message)
+    empleado=seleccion_empleado(cargar_empleados(DATA_DIR / 'empleados_demo.json'),user_id)
+    state=crear_estado_demo(empleado=empleado)
+    if empleado:
+        config=initialize_assistant(empleado.get('perfil','dev_junior'))
+    else:
+        config=initialize_assistant('dev_junior')
     prompt=build_assistant_prompt(
         assistant_config=config,
         user_state=state,
         user_message=u_message,
         extra_context={
-            'faqs':faqs or [],
-            'docs':docs or []
-            },
-            # recent_messages= ultimos_n(state,ventana)
+            'faqs':faqs,
+            'docs':docs
+        },
     )
     try:
         texto,metricas=safe_generate(prompt,temperature=config['temperature'])
     except ValueError as e:
         return respuesta_error('Error al generar',[str(e)])
+    
     # actualizar_perfil_desde_mensaje(state, u_message)
     # append_user(state, u_message)
     # append_assistant(state, texto)
@@ -67,13 +102,4 @@ def procesar_turno(
             "faqs":faqs,
             "docs":docs
         },
-    )
-
-def crear_estado_demo() -> dict:
-    return inicializar_estado(
-        {
-            "nombre": "",
-            "nivel": "junior",
-            "tema_actual": "",
-        }
     )

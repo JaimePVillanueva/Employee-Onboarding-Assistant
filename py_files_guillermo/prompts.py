@@ -1,15 +1,32 @@
-from config import PERFILES
+from config import (
+    PERFILES,
+    SYSTEM_RULES,
+    DOM_KEY
+    )
 
-def build_faq_block(faq_entries: list[dict]) -> str:
-    """Bloque de texto con entradas FAQ seleccionadas."""
-    if not faq_entries:
+def build_faqs_block(faqs: list[dict]) -> str:
+    if not faqs:
         return ""
-    lines = ["--- FAQ (referencia seleccionada) ---"]
-    for entry in faq_entries:
-        lines.append(f"P: {entry.get('pregunta', '')}")
-        lines.append(f"R: {entry.get('respuesta_corta', '')}")
+    lines = ["--- FAQs ---"]
+    # for f in range (len(faqs)):
+    for f in faqs:
+        lines.append(f"P: {f.get('pregunta', '')}")
+        lines.append(f"R: {f.get('respuesta_corta', '')}")
         lines.append("")
-    lines.append("--- FIN FAQ ---")
+    lines.append("--- FIN FAQs ---")
+    return "\n".join(lines)
+
+def build_docs_block(docs:list[dict]) -> str:
+    if not docs:
+        return ""
+    lines = ["--- DOCs ---"]
+    # for d in range (len(docs)):
+    for d in docs:
+        lines.append(f"Titulo: {d.get('titulo','')}")
+        lines.append(f'Departamento: {d.get('departamento','')}')
+        lines.append(f"Cuerpo: {d.get('cuerpo','')}")
+        lines.append("")
+    lines.append("--- FIN DOCs ---")
     return "\n".join(lines)
 
 def build_history_block(messages: list[dict]) -> str:
@@ -18,8 +35,18 @@ def build_history_block(messages: list[dict]) -> str:
         return "(sin turnos previos en la ventana)"
     return "\n".join(f"{m['role']}: {m['text']}" for m in messages)
 
+def build_documentation_block(*,faqs:list[dict],docs:list[dict])->str:
+    return f'''
+===== DOCUMENTACIÓN =====
+
+{build_faqs_block(faqs)}
+
+{build_docs_block(docs)}
+
+===== FIN DOCUMENTACIÓN =====
+'''.strip()
+
 def resolver_perfil(assistant_config: dict) -> dict:
-    """Resuelve el perfil activo desde assistant_config. Helper ya implementado."""
     clave = assistant_config["perfil_activo"]
     if clave not in PERFILES:
         raise ValueError(f"Perfil desconocido: {clave}")
@@ -40,19 +67,23 @@ def build_assistant_prompt(
     recent=recent_messages or []
     
     return f'''
-{perfil.get('rol')}
-
 Instrucciones del asistente de empleados:
-- Responde en {assistant_config["idioma_respuesta"]}.
+
+{perfil['rol']}
+{SYSTEM_RULES}
 - Nivel de explicación del perfil: {perfil["nivel_explicacion"]}.
 - Máximo aproximado: {assistant_config["max_palabras"]} palabras.
 
 Perfil del usuario:
 - Nombre: {profile.get("nombre") or "(desconocido)"}
-- Nivel declarado: {profile.get("nivel", "junior")}
-- Tema actual: {profile.get("tema_actual") or "(sin tema fijado)"}
+- Perfil: {profile.get("perfil", "dev_junior")}
+- Rol: {profile.get('rol')}
+- Departamento: {profile.get('depatamento')}
+- Modalidad: {profile.get('modalidad')}
+- Idioma: {profile.get('idioma_preferido')}
+- Tema actual: {profile.get("tema_actual",'sin tema')}
 
-{build_faq_block(faqs)}
+{build_documentation_block(faqs=faqs,docs=docs)}
 
 Historial reciente:
 {build_history_block(recent)}

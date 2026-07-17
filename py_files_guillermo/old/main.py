@@ -1,31 +1,20 @@
 from copy import deepcopy
+from pathlib import Path
 from config import ASSISTANT_CONFIG_DEFAULT
-from logic import (procesar_turno)
+from logic import (crear_estado_demo, procesar_turno)
 
+DATA_DIR = Path(__file__).parent.parent / "data"
 
 def imprimir_resultado(respuesta:dict)->None:
     status=respuesta.get('status','unknown').upper()
     message=respuesta.get('message','')
-    print(f'[{status}]')
+    print(f'[{status}] {message}')
     data=respuesta.get('data',{})
     if status=='ERROR':
-        print(message)
         for e in data.get('errores',[]):
             print ('\n -',e)
         return
-    print (f'''
-{message}: {data.get('perfil','junior')}
-{'='*60}
-
-{data.get('respuesta','')}
-
-FAQs: {('\n -').join([f.get('pregunta','') for f in data.get('faqs',[])])}
-Docs: {('\n -').join([d.get('titulo','') for d in data.get('docs',[])])}
-
-Latencia: {data.get('metricas')['elapsed_ms']}
-Tokens entrada: {data.get('metricas')['prompt_tokens']}
-Tokens salida: {data.get('metricas')['output_tokens']}
-''')
+    print (f': {data.get('perfil','junior')}\n{'='*60}\nR: {data.get('respuesta','')}\nFAQs: {data.get('faqs',[])}\nDocs: {data.get('docs',[])}')
 
 def imprimir_resultado_checklist(respuesta:dict)->None:
     status=respuesta.get('status','unknown').upper()
@@ -47,15 +36,12 @@ Tareas:
     
 def demo_perfiles() -> None:
     print("=" * 60)
-    print("1) conversación de 1 turno (empleado tipo dev junior).")
+    print("1) Misma pregunta, distinto perfil del asistente")
     print("=" * 60)
 
-    pregunta = "¿Cuál es el horario de entrada?"
-    user_id='demo'
-    imprimir_resultado(procesar_turno(user_id=user_id,u_message=pregunta))
-
-def main()->None:
-    demo_perfiles()
-
-if __name__ == '__main__':
-    main()
+    pregunta = "¿Qué es un asistente conversacional con LLM?"
+    for perfil in ("dev_junior", "comercial", "remoto_eu"):
+        config = deepcopy(ASSISTANT_CONFIG_DEFAULT)
+        config["perfil_activo"] = perfil
+        state = crear_estado_demo()
+        imprimir_resultado(procesar_turno(state, pregunta, assistant_config=config))

@@ -36,31 +36,30 @@ def seleccion_faq(faqs:list[dict],pregunta:str,max_faq:int = FAQS)-> list[dict]:
         if score>0:
             orden.append((score,f))
     orden.sort(key=lambda x: x[0],reverse=True)
-    return [o[1] for o in orden[:max_faq]]
+    return (o for o in orden[:max_faq])
 
-def seleccion_doc(docs:list[dict],*,faqs:list[dict] | None=None,pregunta:str,max_doc:int = DOCS)-> list[dict]:
+def seleccion_doc(docs:list[dict],faqs:list[dict],pregunta:str,max_doc:int = DOCS)-> list[dict]:
     quest=pregunta.strip().lower()
     orden:list[tuple[int,dict]]=[]
     faq_doc_list=[]
-    if faqs:
-        for f in faqs:
-            ref=f.get('doc_id')
-            if ref not in faq_doc_list:
-                faq_doc_list.append(ref)
+    for f in faqs:
+        ref=f.get('doc_id')
+        if ref not in faq_doc_list:
+            faq_doc_list.append(ref)
     for d in docs:
         score=0
-        if d.get('id') in faq_doc_list:
-            score=7
-        else:
+        if d.get('doc_id') not in faq_doc_list:
             for t in d.get('tags',[]):
                 if t.lower() in quest:
                     score+=2
-            if d.get('titulo','').strip().lower() in quest:
+            if d.get('pregunta','').strip().lower() in quest:
                 score+=3
+        else:
+            score=7
         if score>0:
             orden.append((score,d))
     orden.sort(key=lambda x: x[0],reverse=True)
-    return [o[1] for o in orden[:max_doc]]
+    return (o for o in orden[:max_doc])
 
 def seleccion_empleado(emps:list[dict],emp_id:str)->dict|None:
     for e in emps:
