@@ -62,7 +62,7 @@ def llamar_gemini_json(
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=temperature,
-            response_mime_type='aplication/json',
+            response_mime_type='application/json',
             )
         )
     return (response.text or '').strip(),_metricas_from_response(response,started)

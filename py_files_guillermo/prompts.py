@@ -1,7 +1,8 @@
 from config import (
     PERFILES,
     SYSTEM_RULES,
-    DOM_KEY
+    DOM_KEY,
+    JSON_SCHEMA_CHECKLIST
     )
 
 def build_faqs_block(faqs: list[dict]) -> str:
@@ -92,3 +93,24 @@ Mensaje actual del usuario:
 {user_message.strip()}
 '''.strip()
     
+def prompt_tareas(
+    *,
+    state:dict,
+    docs:list[dict]          
+)->str:
+    user=state.get('user_profile')
+    return f'''
+--- USUARIO ---
+- Perfil: {user.get("perfil", "dev_junior")}
+- Rol: {user.get('rol')}
+- Departamento: {user.get('depatamento')}
+- Modalidad: {user.get('modalidad')}
+--- FIN USUARIO ---
+
+{build_docs_block(docs=docs)}
+
+Crea una lista de tareas a partir de los documentos proporcionados que aplican a el perfil del usuario
+Debes respoonder en idioma {user.get('idioma_preferido')}
+
+{JSON_SCHEMA_CHECKLIST}
+'''

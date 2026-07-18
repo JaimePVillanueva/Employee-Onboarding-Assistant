@@ -1,10 +1,12 @@
+import json
+
 from copy import deepcopy
-from config import (DATA_DIR,ASSISTANT_CONFIG_DEFAULT)
+from config import (DATA_DIR,ASSISTANT_CONFIG_DEFAULT,KEY_CHECK)
 from context import (cargar_docs,cargar_faq,seleccion_doc,seleccion_faq,seleccion_empleado,cargar_empleados)
 from gemini_client import(MetricasLlamada,safe_generate)
-from prompts import (build_assistant_prompt)
+from prompts import (build_assistant_prompt,prompt_tareas)
 from state import (inicializar_estado)
-from validators import valid_data
+from validators import valid_data,valid_check
 
 def respuesta_ok(message:str,data:dict)->dict:
     return{
@@ -29,10 +31,10 @@ def _metricas_to_dict(metricas:MetricasLlamada)->dict:
     }
 
 
-def crear_estado_demo(empleado:dict|None=None) -> dict:
+def crear_estado_demo(*,empleado:dict|None=None,dia:int|None=None) -> dict:
     if not empleado:
         return inicializar_estado(
-            {
+            user_profile={
                 "nombre": "",
                 "departamento": "engineering",
                 "rol": "Junior Software Engineer",
@@ -43,14 +45,14 @@ def crear_estado_demo(empleado:dict|None=None) -> dict:
             }
         )
     return inicializar_estado(
-            {
+            user_profile={
                 "nombre": empleado.get('nombre',''),
                 "departamento": empleado.get('departamento',''),
                 "rol": empleado.get('rol',''),
                 "modalidad": empleado.get('modalidad',''),
                 "idioma_preferido": empleado.get('idioma_preferido',''),
                 "perfil": empleado.get('perfil',''),
-                "dia":1,
+                "dia":dia or 1,
             }
         )
 
@@ -59,20 +61,29 @@ def initialize_assistant(perfil:str)->dict:
     config["perfil_activo"] = perfil
     return config
 
+def parsear_tareas(check:str)->list[dict]:
+    try:
+        tareas=json.loads(check)
+    except:
+        raise ValueError ('Formato JSON respuesta inválido')
+    for t in tareas:
+        if not all(key in t for key in KEY_CHECK):
+            raise ValueError ('Faltan keywords')
+    return tareas
+
 def procesar_turno(
-    user_id:str,
+    *,
+    state:dict,
     u_message:str,
 )->dict:
-    errores=(valid_data(u_message,user_id))
+    errores=valid_data(u_message,state)
     if errores:
         return respuesta_error('Turno no procesado',errores=errores)
     
     faqs=seleccion_faq(cargar_faq(DATA_DIR / 'faq_onboarding.json'),u_message)
     docs=seleccion_doc(cargar_docs(DATA_DIR / 'onboarding_docs.json'),faqs=faqs,pregunta=u_message)
-    empleado=seleccion_empleado(cargar_empleados(DATA_DIR / 'empleados_demo.json'),user_id)
-    state=crear_estado_demo(empleado=empleado)
-    if empleado:
-        config=initialize_assistant(empleado.get('perfil','dev_junior'))
+    if state['user_profile']:
+        config=initialize_assistant(state.get('user_profile').get('perfil','dev_junior'))
     else:
         config=initialize_assistant('dev_junior')
     prompt=build_assistant_prompt(
@@ -101,5 +112,35 @@ def procesar_turno(
             "metricas": _metricas_to_dict(metricas),
             "faqs":faqs,
             "docs":docs
+        },
+    )
+
+def procesar_checklist(
+    *,
+    state:dict,
+    dia:int|None=None,
+)->dict:
+    if not dia:
+        dia=1
+    errores=valid_check(state,dia=dia)
+    if errores:
+        return respuesta_error('Turno no procesado',errores=errores)
+    p_tareas=prompt_tareas(state=state,docs=cargar_docs(DATA_DIR / 'onboarding_docs.json'))
+    try:
+       raw_tarea,metricas_tarea=safe_generate(p_tareas,temperature=0,json_mode=True)
+    except ValueError as e:
+        return respuesta_error('Error al generar',[str(e)])
+    
+    tareas=parsear_tareas(raw_tarea)
+    state['tareas']=tareas
+
+    return respuesta_ok(
+        "Turno procesado",
+        {
+            "empleado": state.get('user_profile').get('nombre'),
+            "dia": state.get('user_profile').get('dia'),
+            "metricas": _metricas_to_dict(metricas_tarea),
+            'tareas':state.get('tareas',[]),
+            'mensaje_resumen':''
         },
     )

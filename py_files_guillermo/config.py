@@ -63,10 +63,17 @@ PATRONES_SOSPECHOSOS = (
     "jailbreak",
 )
 
-# JSON_SCHEMA_CHECKLIST = '''
-# Devuelve SOLO un JSON con estas claves:
-# - 'empleado_id':
-# - 'dia':
-# - 'tareas':
-# - 'mensaje_resumen':
-# '''
+JSON_SCHEMA_CHECKLIST = '''
+Devuelve SOLO un JSON de una lista de diccionarios con estas claves:
+- 'id': crea un id único para cada tarea
+- 'titulo': resume la tarea en una breve linea
+- 'completada': valor booleano false
+- 'fuente_doc': id del documento de la tarea
+'''
+
+KEY_CHECK=(
+    'id',
+    'titulo',
+    'completada',
+    'fuente_doc'
+)
