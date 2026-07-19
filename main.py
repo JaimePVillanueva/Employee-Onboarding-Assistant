@@ -1,7 +1,11 @@
 from context import get_contexto
-from prompts import build_prompt_chat, build_prompt_checklist
-from logic import actualizar_historial, MAX_TURNOS
+from prompts import build_prompt_chat, build_prompt_checklist, actualizar_historial
+from logic import procesar_turno, respuesta_ok, respuesta_error
 from gemini_client import safe_generate
+from state import inicializar_estado, last_messages, append_user, append_assistant
+from config import WINDOW, MODELS
+
+
 
 
 def demo_1():
@@ -10,7 +14,7 @@ def demo_1():
     pregunta = "¿A qué canales de Slack me uno?"
     contexto = get_contexto("emp_01", 1, pregunta)
     prompt = build_prompt_chat(contexto, pregunta, [])
-    respuesta, metricas = safe_generate(prompt)
+    respuesta, metricas = safe_generate(prompt, MODELS[0], json_mode=True)
     print(f"Empleado: {pregunta}")
     print(f"Asistente: {respuesta}")
     print(f"Tokens: {metricas.total_tokens} | Latencia: {metricas.elapsed_ms}ms")
@@ -21,7 +25,7 @@ def demo_2():
     print("\n=== DEMO 2 — Checklist día 1 ===")
     contexto = get_contexto("emp_01", 1, "")
     prompt = build_prompt_checklist(contexto)
-    checklist, metricas = safe_generate(prompt, json_mode=True)
+    checklist, metricas = safe_generate(prompt, MODELS[0], json_mode=True)
     print(checklist)
     print(f"Tokens: {metricas.total_tokens} | Latencia: {metricas.elapsed_ms}ms")
 
@@ -34,13 +38,13 @@ def demo_3():
     print("\n-- Empleado comercial (emp_02) --")
     contexto_comercial = get_contexto("emp_02", 1, pregunta)
     prompt_comercial = build_prompt_chat(contexto_comercial, pregunta, [])
-    respuesta_comercial, _ = safe_generate(prompt_comercial)
+    respuesta_comercial, _ = safe_generate(prompt_comercial, MODELS[0], json_mode=True)
     print(f"Asistente: {respuesta_comercial}")
 
     print("\n-- Empleado remoto UE (emp_03) --")
     contexto_remoto = get_contexto("emp_03", 1, pregunta)
     prompt_remoto = build_prompt_chat(contexto_remoto, pregunta, [])
-    respuesta_remoto, _ = safe_generate(prompt_remoto)
+    respuesta_remoto, _ = safe_generate(prompt_remoto, MODELS[0], json_mode=True)
     print(f"Asistente: {respuesta_remoto}")
 
 
@@ -52,19 +56,20 @@ def modo_interactivo():
 
     contexto = get_contexto(empleado_id, dia, "")
     prompt_checklist = build_prompt_checklist(contexto)
-    checklist, _ = safe_generate(prompt_checklist, json_mode=True)
+    checklist = safe_generate(prompt = prompt_checklist, model = MODELS[0], json_mode = True)
     print("\n=== CHECKLIST DEL DÍA ===")
     print(checklist)
 
-    print(f"\nHola {contexto['empleado']['nombre']}, puedes hacerme hasta {MAX_TURNOS} preguntas.\n")
+
+    print(f"\nHola {contexto['empleado']['nombre']}, puedes hacerme hasta {WINDOW} preguntas.\n")
 
     historial = []
-    while len(historial) < MAX_TURNOS:
+    while len(historial) < WINDOW:
         pregunta = input("Tu pregunta: ")
         contexto = get_contexto(empleado_id, dia, pregunta)
         prompt = build_prompt_chat(contexto, pregunta, historial)
-        respuesta, _ = safe_generate(prompt)
-        print(f"\nAsistente: {respuesta}\n")
+        respuesta = safe_generate(prompt = prompt, model = MODELS[0], json_mode=True)
+        print(f"\nAsistente: {respuesta} \n")
         historial, continuar = actualizar_historial(historial, pregunta, respuesta)
         if not continuar:
             break

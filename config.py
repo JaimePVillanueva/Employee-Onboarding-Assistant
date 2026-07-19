@@ -1,7 +1,6 @@
 from pathlib import Path
 
 MODELS = [
-    "gemini-2.5-pro",
     "gemini-3.1-flash-lite",
 ]
 

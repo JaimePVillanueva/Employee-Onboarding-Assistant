@@ -2,11 +2,11 @@ from config import WINDOW ## Importamos WINDOW
 
 
 
-def build_prompt_chat(contexto, pregunta, historial, assitant_config):
+def build_prompt_chat(contexto, pregunta, historial) -> str:
     empleado = contexto["empleado"]
     doc_dia = contexto["doc_dia"]
     docs_keywords = contexto["docs_keywords"]
-
+    
     docs_texto = ""
     for doc in docs_keywords:
         docs_texto += f"\n---\n{doc['titulo']}\n{doc['cuerpo']}"
@@ -35,6 +35,7 @@ Modalidad: {empleado['modalidad']}
 - Acoso o problemas de conducta → derivar a people@bridgesa.example
 - Dudas de onboarding no resueltas → derivar a onboarding@bridgesa.example
 - Consultas de participantes externos → no atender, solo empleados con contrato laboral
+- En función del departamento al que esté referenciado el documento, derivar la pregunta a dicho departamento
 </reglas_derivacion>
 """
 
@@ -46,7 +47,7 @@ Modalidad: {empleado['modalidad']}
 
     mensajes.append({"role": "user", "content": pregunta})
 
-    return mensajes
+    return system
 
 
 def build_prompt_checklist(contexto):

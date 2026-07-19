@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from google import genai
 from google.genai import types
 
-from config import MAX_TOKENS_INPUT, MODEL, TEMPERATURE, TEMPERATURE_VULNERABLE ## No importamos MAX_INPUT_CHARS
+from config import MAX_TOKENS_INPUT, MODELS, TEMPERATURE, TEMPERATURE_VULNERABLE ## No importamos MAX_INPUT_CHARS
 from gemini_auth import configurar_gemini_api_key
 
 configurar_gemini_api_key()
@@ -28,8 +28,8 @@ def _client() -> genai.Client: ## Función de cliente: establece el cliente de g
     return _client_instance
 
 
-def count_tokens(contents: str) -> int: ## Mide la cantidad de tokens que gastará la entrada
-    r = _client().models.count_tokens(model=MODEL, contents=contents)
+def count_tokens(contents: str, model: str) -> int: ## Mide la cantidad de tokens que gastará la entrada
+    r = _client().models.count_tokens(model=model, contents=contents)
     return int(r.total_tokens or 0)
 
 
@@ -46,7 +46,6 @@ def _metricas_from_response(response, started: float) -> MetricasLlamada: ## Dev
 
 def llamar_gemini( ## Función para llamar a gemini
     prompt: str,
-    *,
     model: str,
     temperature: float = TEMPERATURE_VULNERABLE, ## Está establecida a 0.2
 ) -> tuple[str, MetricasLlamada]:
@@ -61,7 +60,6 @@ def llamar_gemini( ## Función para llamar a gemini
 
 def llamar_gemini_json( ## Misma función que la anterior pero fuerza la respuesta en formato JSON
     prompt: str,
-    *,
     model: str,
     temperature: float = TEMPERATURE,
 ) -> tuple[str, MetricasLlamada]:
@@ -77,14 +75,13 @@ def llamar_gemini_json( ## Misma función que la anterior pero fuerza la respues
     return (response.text or "").strip(), _metricas_from_response(response, started)
 
 
-def safe_generate( ## Llama a una función un otra (de llamada a gemini) dependiendo de si se pide a la función que la respuesta sea en JSON o no
+def safe_generate( ## Llama a una función u otra (de llamada a gemini) dependiendo de si se pide a la función que la respuesta sea en JSON o no
     prompt: str,
-    *,
     model: str,
     temperature: float = TEMPERATURE,
     json_mode: bool = False,
 ) -> tuple[str, MetricasLlamada]:
-    tokens = count_tokens(prompt)
+    tokens = count_tokens(prompt, model)
     if tokens > MAX_TOKENS_INPUT:
         raise ValueError(
             f"Prompt demasiado grande: {tokens} tokens (máx {MAX_TOKENS_INPUT}). "

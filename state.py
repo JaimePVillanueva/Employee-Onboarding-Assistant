@@ -27,3 +27,4 @@ def append_assistant(state: dict, texto: str) -> None: ## Función para añadir 
 def last_messages(state: dict, messages: int) -> list[dict]: ## Función para devolver los últimos mensajes de la sesión
     msgs = state.get("messages", [])
     return msgs[-messages:] if n > 0 else []
+

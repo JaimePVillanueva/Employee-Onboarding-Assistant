@@ -1,37 +1,46 @@
 import json
 
 
-def get_empleado(empleado_id):
-    with open("data/empleados_demo.json", "r") as f:
+def get_empleado(empleado_id) -> str: ## Devuelve el Id de empleado, buscando por el número de orden de empleados de la lista
+    with open("data/empleados_demo.json", "r", encoding="utf-8") as f:
         empleados = json.load(f)
-    for x in empleados:
-        if x["id"] == empleado_id:
-            return x
+    for emp_id in empleados:
+        if emp_id["id"] == empleado_id:
+            return emp_id
     return None
 
 
-def get_docs_por_departamento(departamento):
-    with open("data/onboarding_docs.json", "r") as f:
+def get_docs_por_departamento(departamento) -> list: ## 
+    with open("data/onboarding_docs.json", "r", encoding="utf-8") as f:
         docs = json.load(f)
     resultado = []
-    for x in docs:
-        if x["departamento"] == departamento:
-            resultado.append(x)
+    for doc in docs:
+        if doc["departamento"] == departamento:
+            resultado.append(doc)
     return resultado
 
 
-def get_docs_por_keywords(pregunta):
-    with open("data/onboarding_docs.json", "r") as f:
+def get_docs_por_keywords(pregunta) -> list:
+    with open("data/onboarding_docs.json", "r", encoding="utf-8") as f:
         docs = json.load(f)
     palabras = pregunta.lower().split()
     acumulador_tag = []
-    for x in docs:
-        if any(palabra in x["tags"] for palabra in palabras):
-            acumulador_tag.append(x)
+    for doc in docs:
+        if any(palabra in doc["tags"] for palabra in palabras):
+            acumulador_tag.append(doc)
     return acumulador_tag
 
+def get_faq_por_tag(pregunta) -> list:
+    with open("data/faq_onboarding.json", "r", encoding="utf-8") as pregs:
+        preguntas = json.load(pregs)
+    palabras_pregunta = pregunta.lower().split()
+    guardar_pregunta = []
+    for preg in preguntas:
+        if any(palabra in preg["tags"] for palabra in palabras_pregunta):
+            guardar_pregunta.append(preg)
+    return guardar_pregunta
 
-def get_contexto(empleado_id, dia, pregunta):
+def get_contexto(empleado_id, dia, pregunta) -> dict:
     empleado = get_empleado(empleado_id)
     departamento = empleado["departamento"]
     docs_dpto = get_docs_por_departamento(departamento)

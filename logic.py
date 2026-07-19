@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from context import cargar_faq, seleccionar_faq
+from context import get_contexto, get_docs_por_departamento, get_docs_por_keywords, get_empleado, get_faq_por_tag
 from gemini_client import MetricasLlamada
 from state import inicializar_estado, last_messages, append_user, append_assistant
 from prompts import build_prompt_chat
