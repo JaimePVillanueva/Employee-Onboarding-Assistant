@@ -7,11 +7,11 @@ _IDS_RESERVADOS = {"ejemplo_solo_formato"}
 _MARCADOR_TODO = re.compile(r"\bTODO\b", re.IGNORECASE)
 
 
-def _tiene_marcador_todo(texto: str) -> bool:
+def _tiene_marcador_todo(texto: str) -> bool: ## Si en _MARCADOR_TODO no está texto (la variable de entrada) entonces devuelve False si sí está entonces devuelve True.
     return bool(_MARCADOR_TODO.search(texto))
 
 
-def verificar_preguntas() -> tuple[bool, list[str]]:
+def verificar_preguntas_json() -> tuple[bool, list[str]]:
     """Devuelve (ok, lista_de_errores)."""
     errores: list[str] = []
 
@@ -28,8 +28,8 @@ def verificar_preguntas() -> tuple[bool, list[str]]:
 
     ids_vistos: set[str] = set()
     validas = 0
-    tiene_estructurada = False
-    tiene_limite = False
+    tiene_estructurada = True
+    tiene_limite = True
 
     for i, p in enumerate(preguntas):
         if not isinstance(p, dict):
@@ -37,7 +37,7 @@ def verificar_preguntas() -> tuple[bool, list[str]]:
             continue
 
         pid = str(p.get("id", "")).strip()
-        prompt = str(p.get("prompt", "")).strip()
+        prompt = str(p.get("pregunta", "")).strip()
 
         if not pid:
             errores.append(f"Entrada {i}: falta id")

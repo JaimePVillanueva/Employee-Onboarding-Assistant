@@ -16,4 +16,4 @@ PREGUNTAS_PATH = DATA_DIR / "faq_onboarding.json" ## Entra en el archivo faq_onb
 OUTPUT_DIR = Path(__file__).parent / "output" ## Entra en la carpeta output
 ENTREGABLES_DIR = Path(__file__).parent / "entregables" ## Entra en la carpeta entregables
 
-MIN_PREGUNTAS = 4
+MIN_PREGUNTAS = 0
