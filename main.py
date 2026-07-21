@@ -6,6 +6,8 @@ from state import inicializar_estado, last_messages, append_user, append_assista
 from config import WINDOW, MODELS
 from validators import verificar_preguntas_json, verificar_entregables
 from error import EscenarioNoAceptado
+from benchmark import ejecutar_benchmark
+from report import guardar_csv, _medias_por_modelo, generar_reporte_md
 
 
 
@@ -26,7 +28,13 @@ def demo_1():
     respuesta, metricas = safe_generate(prompt, MODELS[0], json_mode=True)
     print(f"Empleado: {pregunta}")
     print(f"Asistente: {respuesta}")
-    print(f"Tokens: {metricas.total_tokens} | Latencia: {metricas.elapsed_ms}ms")
+    print("Ejecutando benchmark...")
+    filas = ejecutar_benchmark(prompt)
+    csv_path = guardar_csv(filas)
+    md_path = generar_reporte_md(filas, csv_path)
+    print(f"\nCSV: {csv_path}")
+    print(f"Informe: {md_path}")
+    print("\nSiguiente: completa entregables/matriz_decision.md y recomendacion.md")
 
 
 def demo_2():

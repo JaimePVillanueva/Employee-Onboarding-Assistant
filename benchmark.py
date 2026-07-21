@@ -9,7 +9,6 @@ from gemini_client import llamar_gemini
 @dataclass
 class FilaBenchmark: ## Clase FilaBenchmark
     timestamp: str
-    pregunta_id: str
     modelo: str
     elapsed_ms: int
     prompt_tokens: int | None
@@ -24,45 +23,38 @@ def cargar_preguntas() -> list[dict]:
         return json.load(f)
 
 
-def ejecutar_benchmark() -> list[FilaBenchmark]:
-    preguntas = cargar_preguntas()
+def ejecutar_benchmark(prompt) -> list[FilaBenchmark]:
     filas: list[FilaBenchmark] = []
-
-    for p in preguntas:
-        pid = p["id"]
-        prompt = p["prompt"]
-        for modelo in MODELS:
-            ts = datetime.now(timezone.utc).isoformat()
-            try:
-                texto, m = llamar_gemini(prompt, model=modelo, temperature=TEMPERATURE)
-                filas.append(
-                    FilaBenchmark(
-                        timestamp=ts,
-                        pregunta_id=pid,
-                        modelo=modelo,
-                        elapsed_ms=m.elapsed_ms,
-                        prompt_tokens=m.prompt_tokens,
-                        output_tokens=m.output_tokens,
-                        total_tokens=m.total_tokens,
-                        respuesta=texto,
-                    )
+    for modelo in MODELS:
+        ts = datetime.now(timezone.utc).isoformat()
+        try:
+            texto, m = llamar_gemini(prompt, model=modelo, temperature=TEMPERATURE)
+            filas.append(
+                FilaBenchmark(
+                    timestamp=ts,
+                    modelo=modelo,
+                    elapsed_ms=m.elapsed_ms,
+                    prompt_tokens=m.prompt_tokens,
+                    output_tokens=m.output_tokens,
+                    total_tokens=m.total_tokens,
+                    respuesta=texto,
                 )
-                print(f"OK  {pid} × {modelo} ({m.elapsed_ms} ms)")
-            except Exception as exc:  # noqa: BLE001 — demo didáctica
-                filas.append(
-                    FilaBenchmark(
-                        timestamp=ts,
-                        pregunta_id=pid,
-                        modelo=modelo,
-                        elapsed_ms=0,
-                        prompt_tokens=None,
-                        output_tokens=None,
-                        total_tokens=None,
-                        respuesta="",
-                        error=str(exc),
-                    )
+            )
+            print(f"El modelo {modelo} ha tardado ({m.elapsed_ms} ms)")
+        except Exception as exc: 
+            filas.append(
+                FilaBenchmark(
+                    timestamp=ts,
+                    modelo=modelo,
+                    elapsed_ms=0,
+                    prompt_tokens=None,
+                    output_tokens=None,
+                    total_tokens=None,
+                    respuesta="",
+                    error=str(exc),
                 )
-                print(f"ERR {pid} × {modelo}: {exc}")
+            )
+            print(f"Error para el modelo {modelo}: {exc}")
 
     return filas
 

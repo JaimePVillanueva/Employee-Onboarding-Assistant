@@ -1,0 +1,9 @@
+timestamp,modelo,elapsed_ms,prompt_tokens,output_tokens,total_tokens,respuesta,error
+2026-07-20T16:30:29.800304+00:00,gemini-3.1-flash-lite,983,394,214,608,"¡Hola, Laura! Bienvenida a Bridge SA. Como Junior Software Engineer en tu primer día de onboarding, aquí tienes los pasos que debes seguir hoy:
+
+1. **Bienvenida:** Recibirás la invitación a Slack tras activar tu cuenta de Google Workspace.
+2. **Slack:** Una vez dentro, asegúrate de unirte a los canales obligatorios: `#general`, `#anuncios`, `#random` y `#engineering`. Recuerda no compartir capturas con datos de clientes o participantes en canales públicos. Para cualquier incidencia IT, utiliza el canal `#help-it`.
+3. **GitHub:** Configura la autenticación de doble factor (2FA).
+4. **Documentación:** Realiza la lectura de la arquitectura en Notion.
+
+Si tienes algún problema con tus accesos o software, por favor contacta a it@bridgesa.example. Si tienes alguna otra duda sobre el proceso de onboarding que no esté resuelta aquí, puedes escribir a onboarding@bridgesa.example. ¡Mucho éxito en tu primer día!",
