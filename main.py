@@ -1,7 +1,8 @@
+
 from context import get_contexto
 from prompts import build_prompt_chat, build_prompt_checklist
 from logic import actualizar_historial, MAX_TURNOS
-from state import crear_estado
+from state import crear_estado, guardar_dia, tareas_pendientes
 from gemini_client import safe_generate
 
 
@@ -51,13 +52,20 @@ def modo_interactivo():
     empleado_id = input("¿Cuál es tu ID de empleado? (ej: emp_01): ")
     dia = int(input("¿En qué día de onboarding estás? (1-5): "))
 
-    estado = crear_estado(empleado_id, dia)
+    pendientes = tareas_pendientes (empleado_id, dia)
+    if pendientes :
+        print("\n Tienes tareas pendientes del dia anterior: ")
+        for t in pendientes:
+            print (f" - {t['titulo']}")
+
 
     contexto = get_contexto(empleado_id, dia, "")
-    prompt_checklist = build_prompt_checklist(contexto)
-    checklist, _ = safe_generate(prompt_checklist, json_mode=True)
+    prompt = build_prompt_checklist(contexto, pendientes)
+    checklist_str, _ = safe_generate(prompt, json_mode=True)
+    checklist = json.loads (checklist_str)
     print("\n=== CHECKLIST DEL DÍA ===")
-    print(checklist)
+    print(json.dump(checklist, ensure_ascii=False, indent= 2))
+    estado =crear_estado (empleado_id, dia, checklist ["tareas"])
 
     print(f"\nHola {contexto['empleado']['nombre']}, puedes hacerme hasta {MAX_TURNOS} preguntas.\n")
 
@@ -71,7 +79,13 @@ def modo_interactivo():
         if not continuar:
             break
 
-    print("Fin de la conversación. ¡Mucho ánimo!")
+    # Revisar tareas al final del dia y guardar
+    from logic import preguntar_tareas_completadas
+    preguntar_tareas_completadas(estado)
+    guardar_dia (estado)
+    print ("\n Fin de la conversación. ¿Mucho ánimo!")
+
+    
 
 
 if __name__ == "__main__":
