@@ -3,6 +3,7 @@ from pathlib import Path
 MODELS = [
     "gemini-3.1-flash-lite",
 ]
+MODEL= MODELS[0]
 
 TEMPERATURE = 0.2 ## Establecemos la temperatura a 0.2 como aconseja el enunciado
 TEMPERATURE_VULNERABLE = 0.2 ## También la establecemos a 0.2, más adelante se puede cambiar para observar comportamiento

@@ -1,4 +1,6 @@
-
+import json
+from datetime import date
+from config import MODEL
 from context import get_contexto
 from prompts import build_prompt_chat, build_prompt_checklist
 from logic import actualizar_historial, MAX_TURNOS
