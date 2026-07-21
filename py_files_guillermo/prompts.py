@@ -2,7 +2,8 @@ from config import (
     PERFILES,
     SYSTEM_RULES,
     DOM_KEY,
-    JSON_SCHEMA_CHECKLIST
+    JSON_SCHEMA_CHECKLIST,
+    RESUMEN
     )
 
 def build_faqs_block(faqs: list[dict]) -> str:
@@ -46,6 +47,19 @@ def build_documentation_block(*,faqs:list[dict],docs:list[dict])->str:
 
 ===== FIN DOCUMENTACIÓN =====
 '''.strip()
+
+def build_tareas_block(tareas:list[dict]) -> str:
+    if not tareas:
+        return ""
+    lines = ["--- TAREAS ---"]
+    # for d in range (len(docs)):
+    for t in tareas:
+        lines.append(f"Titulo: {t.get('titulo','')}")
+        lines.append(f'Departamento: {t.get('departamento','')}')
+        lines.append(f"Cuerpo: {t.get('cuerpo','')}")
+        lines.append("")
+    lines.append("--- FIN TAREAS ---")
+    return "\n".join(lines)
 
 def resolver_perfil(assistant_config: dict) -> dict:
     clave = assistant_config["perfil_activo"]
@@ -110,7 +124,23 @@ def prompt_tareas(
 {build_docs_block(docs=docs)}
 
 Crea una lista de tareas a partir de los documentos proporcionados que aplican a el perfil del usuario
-Debes respoonder en idioma {user.get('idioma_preferido')}
+Debes responder en idioma {user.get('idioma_preferido')}
 
 {JSON_SCHEMA_CHECKLIST}
 '''
+def comprobar_tareas(*,state:dict,dia:int)->None:
+    tareas=state.get('tareas',[])
+    for t in tareas:
+        if t.get('dia',1)<dia and not t.get('completada',False):
+            respuesta=input(f'Has completado {t.get('titulo')}? (S/N) :')
+            while respuesta!='S' and respuesta!='N':
+                respuesta=input('Resoponde solo S ó N :')
+            if respuesta=='S':
+                t['completada']=True
+
+def prompt_resumen_tareas(tareas:list[dict])->str:
+    return f'''
+{RESUMEN}
+
+{build_tareas_block(tareas=tareas)}
+'''.strip()

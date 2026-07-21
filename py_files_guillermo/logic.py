@@ -2,11 +2,22 @@ import json
 
 from copy import deepcopy
 from config import (DATA_DIR,ASSISTANT_CONFIG_DEFAULT,KEY_CHECK)
-from context import (cargar_docs,cargar_faq,seleccion_doc,seleccion_faq,seleccion_empleado,cargar_empleados)
+from context import (cargar_docs,cargar_faq,seleccion_doc,seleccion_faq)
 from gemini_client import(MetricasLlamada,safe_generate)
-from prompts import (build_assistant_prompt,prompt_tareas)
-from state import (inicializar_estado)
+from prompts import (build_assistant_prompt,prompt_tareas,comprobar_tareas,prompt_resumen_tareas)
+from state import (inicializar_estado,append_assistant,append_user)
 from validators import valid_data,valid_check
+
+def inicializar_checklist(*,state:dict)->dict:
+    p_tareas=prompt_tareas(state=state,docs=cargar_docs(DATA_DIR / 'onboarding_docs.json'))
+    try:
+       raw_tarea,metricas_tarea=safe_generate(p_tareas,temperature=0,json_mode=True)
+    except ValueError as e:
+        return respuesta_error('Error al generar',[str(e)])
+    
+    tareas=parsear_tareas(raw_tarea)
+    state['tareas']=tareas
+    return _metricas_to_dict(metricas_tarea)
 
 def respuesta_ok(message:str,data:dict)->dict:
     return{
@@ -100,9 +111,8 @@ def procesar_turno(
     except ValueError as e:
         return respuesta_error('Error al generar',[str(e)])
     
-    # actualizar_perfil_desde_mensaje(state, u_message)
-    # append_user(state, u_message)
-    # append_assistant(state, texto)
+    append_user(state, u_message)
+    append_assistant(state, texto)
 
     return respuesta_ok(
         "Turno procesado",
@@ -125,22 +135,20 @@ def procesar_checklist(
     errores=valid_check(state,dia=dia)
     if errores:
         return respuesta_error('Turno no procesado',errores=errores)
-    p_tareas=prompt_tareas(state=state,docs=cargar_docs(DATA_DIR / 'onboarding_docs.json'))
+    comprobar_tareas(state=state,dia=dia)
+    tareas= [t for t in state.get('tareas') if not t.get('completada',False) and t.get('dia',1)<=dia]
+    prompt=prompt_resumen_tareas(tareas=tareas)
     try:
-       raw_tarea,metricas_tarea=safe_generate(p_tareas,temperature=0,json_mode=True)
+        resumen,metricas=safe_generate(prompt=prompt)
     except ValueError as e:
-        return respuesta_error('Error al generar',[str(e)])
-    
-    tareas=parsear_tareas(raw_tarea)
-    state['tareas']=tareas
-
+        return respuesta_error("Error de resumen", [str(e)])
     return respuesta_ok(
         "Turno procesado",
         {
             "empleado": state.get('user_profile').get('nombre'),
             "dia": state.get('user_profile').get('dia'),
-            "metricas": _metricas_to_dict(metricas_tarea),
-            'tareas':state.get('tareas',[]),
-            'mensaje_resumen':''
+            "metricas": _metricas_to_dict(metricas),
+            'tareas':tareas,
+            'mensaje_resumen':resumen
         },
     )

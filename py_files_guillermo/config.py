@@ -66,6 +66,7 @@ PATRONES_SOSPECHOSOS = (
 JSON_SCHEMA_CHECKLIST = '''
 Devuelve SOLO un JSON de una lista de diccionarios con estas claves:
 - 'id': crea un id único para cada tarea
+- 'dia': día de 1 a 5 en el que la tarea se debe de realizar
 - 'titulo': resume la tarea en una breve linea
 - 'completada': valor booleano false
 - 'fuente_doc': id del documento de la tarea
@@ -73,7 +74,10 @@ Devuelve SOLO un JSON de una lista de diccionarios con estas claves:
 
 KEY_CHECK=(
     'id',
+    'dia',
     'titulo',
     'completada',
     'fuente_doc'
 )
+
+RESUMEN='Genera un mensaje resumen breve de 1 linea sobre que hay que se va a hacer en el dia en un máximo de 50 caracteres'
