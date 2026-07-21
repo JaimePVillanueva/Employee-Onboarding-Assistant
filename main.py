@@ -1,4 +1,4 @@
-from context import get_contexto
+from context import get_contexto, get_empleado
 from prompts import build_prompt_chat, build_prompt_checklist, actualizar_historial
 from logic import procesar_turno, respuesta_ok, respuesta_error
 from gemini_client import safe_generate
@@ -7,7 +7,7 @@ from config import WINDOW, MODELS
 from validators import verificar_preguntas_json, verificar_entregables
 from error import EscenarioNoAceptado
 from benchmark import ejecutar_benchmark
-from report import guardar_csv, _medias_por_modelo, generar_reporte_md
+from report import guardar_csv, _medias_por_modelo, generar_reporte_md, guardar_json
 
 
 
@@ -103,18 +103,22 @@ def modo_interactivo():
 
 
     print(f"\nHola {contexto['empleado']['nombre']}, puedes hacerme hasta {WINDOW} preguntas.\n")
-
+    sesion = inicializar_estado(get_empleado)
     historial = []
     while len(historial) < WINDOW:
         pregunta = input("Tu pregunta: ")
         contexto = get_contexto(empleado_id, dia, pregunta)
         prompt = build_prompt_chat(contexto, pregunta, historial)
         respuesta = safe_generate(prompt = prompt, model = MODELS[0], json_mode=True)
+        if not sesion:
+            ultimo_turno = procesar_turno(ultimo_turno, pregunta, respuesta[0])
+        else:
+            ultimo_turno = procesar_turno(sesion, pregunta, respuesta[0])
         print(f"\nAsistente: {respuesta} \n")
         historial, continuar = actualizar_historial(historial, pregunta, respuesta)
         if not continuar:
             break
-
+    guardar_json(ultimo_turno)
     print("Fin de la conversación. ¡Mucho ánimo!")
 
 

@@ -25,16 +25,15 @@ def _metricas_a_dict(m: MetricasLlamada) -> dict:
 def procesar_turno(
     state: dict,
     user_message: str,
-    assistant_config: dict | None = None,
-    faq_entries: list[dict] | None = None,
+    respuesta_modelo: str
+    ## assistant_config: dict | None = None,
+    ## faq_entries: list[dict] | None = None,
 ) -> dict:
     if not user_message.strip():
         return respuesta_error("Mensaje vacío", ["El mensaje no puede estar vacío."])
-    prompt = build_prompt_chat(faq_entries, user_message, last_messages(state, WINDOW))
-
-    texto = llamar_gemini(prompt, MODELS[0])
+    ## prompt = build_prompt_chat(faq_entries, user_message, last_messages(state, WINDOW))
 
     append_user(state, user_message)
-    append_assistant(state, texto)
+    append_assistant(state, respuesta_modelo)  
 
-    return respuesta_ok("Turno completado", {"respuesta": texto})
+    return respuesta_ok("Turno completado", {"respuesta": respuesta_modelo})

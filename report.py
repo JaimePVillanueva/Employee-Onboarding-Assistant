@@ -5,9 +5,10 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
+import json
 
 from benchmark import FilaBenchmark
-from config import MODELS, OUTPUT_DIR, TEMPERATURE
+from config import MODELS, OUTPUT_DIR, TEMPERATURE, DIAS_DIR
 
 
 def _stamp() -> str:
@@ -45,7 +46,6 @@ def _medias_por_modelo(filas: list[FilaBenchmark]) -> dict[str, dict[str, float]
             "runs_ok": float(len(lat.get(modelo, []))),
             "elapsed_ms_media": mean(lat[modelo]) if lat.get(modelo) else 0.0,
             "output_tokens_media": mean(out_tok[modelo]) if out_tok.get(modelo) else 0.0,
-            "input_tokens": mean(in)
         }
     return resumen
 
@@ -73,7 +73,7 @@ def generar_reporte_md(filas: list[FilaBenchmark], csv_path: Path) -> Path:
     for modelo in MODELS:
         m = medias[modelo]
         lineas.append(
-            f"| {modelo} | {int(m['runs_ok'])} | {m['input']} |{m['elapsed_ms_media']:.0f} | "
+            f"| {modelo} | {int(m['runs_ok'])} | {m['elapsed_ms_media']:.0f} | "
             f"{m['output_tokens_media']:.1f} |"
         )
 
@@ -97,3 +97,9 @@ def generar_reporte_md(filas: list[FilaBenchmark], csv_path: Path) -> Path:
 
     path.write_text("\n".join(lineas), encoding="utf-8")
     return path
+
+def guardar_json(state: dict) -> None:
+    path = DIAS_DIR / f"report_{_stamp()}.md"
+    json_ = json.dumps(state)
+    path.write_text("\n".join(json_), encoding="utf-8")
+    return None

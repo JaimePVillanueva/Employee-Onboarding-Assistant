@@ -7,6 +7,8 @@ Qué hace este script:
 
 """
 
+import json
+
 def inicializar_estado(user_profile: dict | None = None) -> dict: ## Función para crear el diccionario de la sesión
     return {
         "user_profile": user_profile or {},
@@ -27,4 +29,3 @@ def append_assistant(state: dict, texto: str) -> None: ## Función para añadir 
 def last_messages(state: dict, messages: int) -> list[dict]: ## Función para devolver los últimos mensajes de la sesión
     msgs = state.get("messages", [])
     return msgs[-messages:] if n > 0 else []
-

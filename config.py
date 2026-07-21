@@ -14,6 +14,7 @@ DATA_DIR = Path(__file__).parent / "data" ## Entra en la carpeta data
 PREGUNTAS_PATH = DATA_DIR / "faq_onboarding.json" ## Entra en el archivo faq_onboarding.json
 
 OUTPUT_DIR = Path(__file__).parent / "output" ## Entra en la carpeta output
-ENTREGABLES_DIR = Path(__file__).parent / "entregables" ## Entra en la carpeta entregables
+ENTREGABLES_DIR = Path(__file__).parent / "benchmark" ## Entra en la carpeta entregables
+DIAS_DIR = Path(__file__).parent / "dias" ## Entra en la carpeta dias
 
 MIN_PREGUNTAS = 0
