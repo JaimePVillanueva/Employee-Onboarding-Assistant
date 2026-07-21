@@ -91,5 +91,5 @@ def safe_generate( ## Llama a una función un otra (de llamada a gemini) dependi
             "Recorta contexto en Python."
         )
     if json_mode:
-        return llamar_gemini_json(prompt, model, temperature=temperature)
+        return llamar_gemini_json(prompt, model= model, temperature=temperature)
     return llamar_gemini(prompt, model, temperature=temperature)

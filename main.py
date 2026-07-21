@@ -63,7 +63,7 @@ def modo_interactivo():
 
     contexto = get_contexto(empleado_id, dia, "")
     prompt = build_prompt_checklist(contexto, pendientes)
-    checklist_str, _ = safe_generate(prompt, json_mode=True)
+    checklist_str, _ = safe_generate(prompt,model= MODEL, json_mode=True)
     checklist = json.loads (checklist_str)
     print("\n=== CHECKLIST DEL DÍA ===")
     print(json.dump(checklist, ensure_ascii=False, indent= 2))
