@@ -1,6 +1,9 @@
 import json
 import os
 
+def get_empresa():
+    with open("data/empresa.json", "r") as f:
+        return json.load(f)
 #--- Función 1: get_empleado---
 # Recibe el ID del empleado y devuelve su ficha completa en JSON.
 # ¿Por qué una función separada? La lógica se reutiliza en varios lugares.
@@ -67,6 +70,7 @@ def get_contexto(empleado_id, dia, pregunta):
     docs_dpto =get_docs_por_departamento(departamento)
     docs_keywords = get_docs_por_keywords (pregunta)
     departamento_relevante = get_departamento_relevante(docs_keywords)
+    empresa= get_empresa()
 
 # Mapeamos cada departamento al ID de su doc de primeros 5 días.
 # Usamos un diccionario en vez de if/elif por limpieza y extensión.
@@ -86,7 +90,8 @@ def get_contexto(empleado_id, dia, pregunta):
         "doc_dia" : doc_dia,
         "docs_departamento" : docs_dpto,
         "docs_keywords" : docs_keywords,
-        "departamento_relevante" : departamento_relevante
+        "departamento_relevante" : departamento_relevante,
+        "empresa" : empresa
     }
 
 if __name__ == "__main__":

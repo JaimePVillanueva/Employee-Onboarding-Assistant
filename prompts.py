@@ -18,6 +18,8 @@ def build_prompt_chat(contexto, pregunta, historial): # Conversacion libre
     doc_dia = contexto["doc_dia"]
     docs_keywords = contexto["docs_keywords"]
     departamento_relevante = contexto.get ("departamento_relevante")
+    empresa = contexto["empresa"]
+    
     # .get() es más seguro que. ["clave"]-devuelve None si no existe
     # En vez de lanzar un KeyError
 
@@ -34,10 +36,17 @@ def build_prompt_chat(contexto, pregunta, historial): # Conversacion libre
     for doc in docs_keywords:
         docs_texto += f"\n---\n{doc['titulo']}\n{doc['cuerpo']}"
 
+    valores_texto ="\n".join(f" -{v}" for v in empresa["valores"])
+
     system = f"""Eres el asistente de onboarding de Bridge SA.
 Ayudas a empleados nuevos en sus primeros días. Responde solo con información
 de la documentación proporcionada.
 
+<empresa>
+Mision: {empresa['mision']}
+Valores:
+{valores_texto}
+</empresa>
 <empleado>
 Nombre: {empleado['nombre']}
 Rol: {empleado['rol']}
@@ -72,7 +81,7 @@ Modalidad: {empleado['modalidad']}
     # El LLM lee en orden, asi que lo ultimo que lee es lo que debe responder
     mensajes.append({"role": "user", "content": pregunta})
 
-    return mensajes
+    return "\n".join(f"{m['content']}: {m['content']}" for m in mensajes)
 
 
 def build_prompt_checklist(contexto, tareas_pendientes = None): # Para generar el plan del dia (JSON)

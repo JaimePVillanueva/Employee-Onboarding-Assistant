@@ -1,0 +1,31 @@
+{
+  "empleado_id": "emp_02",
+  "dia": 3,
+  "historial": [
+    {
+      "pregunta": "Cuales son los valores de Bridge SA",
+      "respuesta": "{\n  \"respuesta\": \"Lo siento, no cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a onboarding@bridgesa.example.\"\n}"
+    },
+    {
+      "pregunta": "Cual es la mision de Sales",
+      "respuesta": "{\n  \"respuesta\": \"Lo siento, no cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a sales@bridgesa.example.\"\n}"
+    },
+    {
+      "pregunta": "Cuales son los valores de Bridge SA",
+      "respuesta": "{\n  \"respuesta\": \"Lo siento, no cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a onboarding@bridgesa.example.\"\n}"
+    },
+    {
+      "pregunta": "Valores",
+      "respuesta": "{\n  \"respuesta\": \"Lo siento, no cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a onboarding@bridgesa.example.\"\n}"
+    }
+  ],
+  "tareas": [
+    {
+      "id": "t01",
+      "titulo": "Shadowing de llamada comercial",
+      "completada": false,
+      "fuente_doc": "doc_sales_01",
+      "completado": true
+    }
+  ]
+}

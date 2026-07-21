@@ -66,7 +66,7 @@ def modo_interactivo():
     checklist_str, _ = safe_generate(prompt,model= MODEL, json_mode=True)
     checklist = json.loads (checklist_str)
     print("\n=== CHECKLIST DEL DÍA ===")
-    print(json.dump(checklist, ensure_ascii=False, indent= 2))
+    print(json.dumps(checklist, ensure_ascii=False, indent= 2))
     estado =crear_estado (empleado_id, dia, checklist ["tareas"])
 
     print(f"\nHola {contexto['empleado']['nombre']}, puedes hacerme hasta {MAX_TURNOS} preguntas.\n")
@@ -75,7 +75,7 @@ def modo_interactivo():
         pregunta = input("Tu pregunta: ")
         contexto = get_contexto(empleado_id, dia, pregunta)
         prompt = build_prompt_chat(contexto, pregunta, estado.historial)
-        respuesta, _ = safe_generate(prompt)
+        respuesta, _ = safe_generate(prompt, model= MODEL, json_mode= True)
         print(f"\nAsistente: {respuesta}\n")
         continuar = actualizar_historial(estado, pregunta, respuesta)
         if not continuar:
