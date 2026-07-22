@@ -1,0 +1,42 @@
+{
+  "empleado_id": "emp_01",
+  "dia": 2,
+  "historial": [
+    {
+      "pregunta": "quien es mi manager",
+      "respuesta": "{\n  \"manager\": \"Carlos Ruiz\"\n}"
+    },
+    {
+      "pregunta": "cuales son mi herramientas corporativas",
+      "respuesta": "{\n  \"herramientas\": [\n    \"Slack\",\n    \"GitHub\",\n    \"Notion\",\n    \"Jira\"\n  ]\n}"
+    },
+    {
+      "pregunta": "cuantos dias de vacaciones tengo",
+      "respuesta": "{\n  \"respuesta\": \"Para consultas sobre vacaciones, por favor contacta con el departamento de People en people@bridgesa.example\"\n}"
+    },
+    {
+      "pregunta": "teneis ticket restaurante o seguro medico?",
+      "respuesta": "{\n  \"respuesta\": \"Para consultas sobre beneficios como ticket restaurante o seguro médico, por favor contacta con tu manager o el departamento de People en tu 1:1.\"\n}"
+    }
+  ],
+  "tareas": [
+    {
+      "id": "t01",
+      "titulo": "Configurar entorno local (Python 3.10+)",
+      "completado": false,
+      "fuente_doc": "doc_eng_01"
+    },
+    {
+      "id": "t02",
+      "titulo": "Instalar Docker (opcional)",
+      "completado": false,
+      "fuente_doc": "doc_eng_01"
+    },
+    {
+      "id": "t03",
+      "titulo": "Configurar acceso al entorno de staging",
+      "completado": false,
+      "fuente_doc": "doc_eng_01"
+    }
+  ]
+}

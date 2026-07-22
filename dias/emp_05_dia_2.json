@@ -1,0 +1,42 @@
+{
+  "empleado_id": "emp_05",
+  "dia": 2,
+  "historial": [
+    {
+      "pregunta": "¿quien es mi buddy y que debo esperar?",
+      "respuesta": "{\n  \"respuesta\": \"Tu buddy es un compañero de tu departamento que te acompañará durante tus dos primeras semanas. Su función es resolver dudas prácticas como el uso de canales de Slack, convenciones de trabajo o la ubicación de la documentación. Debéis agendar al menos dos videollamadas de 30 minutos. Ten en cuenta que tu buddy no es tu manager. Si no responde en un plazo de 24 horas laborables, por favor escribe a onboarding@bridgesa.example.\"\n}"
+    },
+    {
+      "pregunta": "trabajo remoto e internacional",
+      "respuesta": "{\n  \"respuesta\": \"Bridge SA es una empresa remoto-first. Puedes trabajar desde tu país de contratación sin necesidad de avisar diariamente. Si deseas trabajar desde otro país durante más de 14 días consecutivos, debes solicitar aprobación previa a RRHH debido a implicaciones fiscales. Para los empleados híbridos en Madrid, se espera una presencia de 2 días a la semana en el coworking de referencia, siendo recomendados los martes y jueves.\"\n}"
+    },
+    {
+      "pregunta": "teneis ticket restaurante",
+      "respuesta": "{\n  \"respuesta\": \"Para consultas sobre beneficios como tickets restaurante, por favor contacta con tu manager o con el equipo de People en tu próxima reunión 1:1.\"\n}"
+    },
+    {
+      "pregunta": "cuantos dias de vacaciones tengo",
+      "respuesta": "{\n  \"respuesta\": \"En España tienes 26 días laborables, salvo convenio local distinto documentado en Factorial. Para empleados en otros países de la UE, se aplica el convenio local documentado en Factorial.\"\n}"
+    }
+  ],
+  "tareas": [
+    {
+      "id": "t01",
+      "titulo": "Configuración del entorno local (Python 3.10+)",
+      "completado": false,
+      "fuente_doc": "doc_eng_01"
+    },
+    {
+      "id": "t02",
+      "titulo": "Instalación de Docker (opcional)",
+      "completado": false,
+      "fuente_doc": "doc_eng_01"
+    },
+    {
+      "id": "t03",
+      "titulo": "Configuración de acceso al entorno de staging",
+      "completado": false,
+      "fuente_doc": "doc_eng_01"
+    }
+  ]
+}

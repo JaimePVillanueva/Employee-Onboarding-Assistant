@@ -17,6 +17,7 @@ def build_prompt_chat(contexto, pregunta, historial): # Conversacion libre
     empleado = contexto["empleado"]
     doc_dia = contexto["doc_dia"]
     docs_keywords = contexto["docs_keywords"]
+    faqs_keywords = contexto["faqs_keywords"]
     departamento_relevante = contexto.get ("departamento_relevante")
     empresa = contexto["empresa"]
     
@@ -36,29 +37,72 @@ def build_prompt_chat(contexto, pregunta, historial): # Conversacion libre
     for doc in docs_keywords:
         docs_texto += f"\n---\n{doc['titulo']}\n{doc['cuerpo']}"
 
-    valores_texto ="\n".join(f" -{v}" for v in empresa["valores"])
+
+    faqs_texto = ""
+    for faq in faqs_keywords:
+        faqs_texto += f"\n---\nP: {faq['pregunta']}\nR: {faq['respuesta_corta']}"
+        doc_asociado = faq.get("doc_asociado")
+        if doc_asociado:
+            faqs_texto += f"\n(Doc relacionado: {doc_asociado['titulo']} — {doc_asociado['cuerpo']})"
+
+    # --- Bloque nuevo: preparamos todos los textos de empresa ---
+    valores_texto = "\n".join(f"- {v}" for v in empresa["valores"])
+    departamentos_texto = "\n".join(
+        f"- {d['nombre']}: {d['mision']}" for d in empresa["departamentos"]
+    )
+    herramientas_texto = "\n".join(f"- {h}" for h in empresa["herramientas_corporativas"])
+    sedes_texto = ", ".join(empresa["sedes"])
+    contactos_texto = "\n".join(f"- {k}: {v}" for k, v in empresa["contactos"].items())
+    # --- Fin bloque nuevo ---
 
     system = f"""Eres el asistente de onboarding de Bridge SA.
 Ayudas a empleados nuevos en sus primeros días. Responde solo con información
 de la documentación proporcionada.
 
 <empresa>
-Mision: {empresa['mision']}
+Nombre: {empresa['nombre']} ({empresa['nombre_legal']})
+Sector: {empresa['sector']}
+Descripción: {empresa['descripcion']}
+Tamaño aproximado: {empresa['tamano_aproximado']} empleados
+Modalidad principal: {empresa['modalidad_principal']}
+Sedes: {sedes_texto}
+
+Departamentos:
+{departamentos_texto}
+
+Misión: {empresa['mision']}
 Valores:
 {valores_texto}
+
+Programa buddy: {empresa['programa_buddy']}
+
+Herramientas corporativas:
+{herramientas_texto}
+
+Contactos:
+{contactos_texto}
 </empresa>
+
 <empleado>
 Nombre: {empleado['nombre']}
 Rol: {empleado['rol']}
 Departamento: {empleado['departamento']}
 Día de onboarding: {contexto['dia']}
-Modalidad: {empleado['modalidad']}
+Manager : {empleado['manager']}
+Modalidad : {empleado['modalidad']}
+Ubicacion : {empleado['ubicacion']}
+Idioma_preferido : {empleado['idioma_preferido']}
+Perfil : {empleado['perfil']}
 </empleado>
 
 <docs>
 {doc_dia['cuerpo']}
 {docs_texto}
 </docs>
+
+<faqs>
+{faqs_texto}
+</faqs>
 
 <reglas_derivacion>
 - Salario, bonus o equity → no responder, derivar a manager o People en 1:1
@@ -81,7 +125,7 @@ Modalidad: {empleado['modalidad']}
     # El LLM lee en orden, asi que lo ultimo que lee es lo que debe responder
     mensajes.append({"role": "user", "content": pregunta})
 
-    return "\n".join(f"{m['content']}: {m['content']}" for m in mensajes)
+    return "\n".join(f"{m['role']}: {m['content']}" for m in mensajes)
 
 
 def build_prompt_checklist(contexto, tareas_pendientes = None): # Para generar el plan del dia (JSON)
@@ -112,6 +156,11 @@ Nombre: {empleado['nombre']}
 Rol: {empleado['rol']}
 Departamento: {empleado['departamento']}
 Día de onboarding: {contexto['dia']}
+Manager : {empleado['manager']}
+Modalidad : {empleado['modalidad']}
+Ubicacion : {empleado['ubicacion']}
+Idioma_preferido : {empleado['idioma_preferido']}
+Perfil : {empleado['perfil']}
 </empleado>
 
 <docs>
@@ -126,7 +175,7 @@ Devuelve el JSON con esta estructura exacta:
         {{
             "id": "t01",
             "titulo": "tarea concreta",
-            "completada": false,
+            "completado": false,
             "fuente_doc": "{doc_dia['id']}"
         }}
     ],

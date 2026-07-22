@@ -3,29 +3,28 @@
   "dia": 3,
   "historial": [
     {
-      "pregunta": "Cuales son los valores de Bridge SA",
-      "respuesta": "{\n  \"respuesta\": \"Lo siento, no cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a onboarding@bridgesa.example.\"\n}"
+      "pregunta": "cuales son los valores de Bridge SA",
+      "respuesta": "{\n  \"valores\": [\n    \"Feedback directo y respetuoso\",\n    \"Aprendizaje continuo\",\n    \"Documentar antes de escalar\",\n    \"Privacidad de clientes y empleados\"\n  ]\n}"
     },
     {
-      "pregunta": "Cual es la mision de Sales",
-      "respuesta": "{\n  \"respuesta\": \"Lo siento, no cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a sales@bridgesa.example.\"\n}"
+      "pregunta": "que es lo que tenia que hacer ayer",
+      "respuesta": "{\n  \"actividad_dia_2\": \"Formación en catálogo de programas (abiertos y corporates)\"\n}"
     },
     {
-      "pregunta": "Cuales son los valores de Bridge SA",
-      "respuesta": "{\n  \"respuesta\": \"Lo siento, no cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a onboarding@bridgesa.example.\"\n}"
+      "pregunta": "quien es mi manager",
+      "respuesta": "{\n  \"respuesta\": \"No cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a onboarding@bridgesa.example.\"\n}"
     },
     {
-      "pregunta": "Valores",
-      "respuesta": "{\n  \"respuesta\": \"Lo siento, no cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a onboarding@bridgesa.example.\"\n}"
+      "pregunta": "Cual es mi perfil",
+      "respuesta": "{\n  \"nombre\": \"Pablo Navarro\",\n  \"rol\": \"Account Executive\",\n  \"departamento\": \"sales\",\n  \"dia_de_onboarding\": 3,\n  \"modalidad\": \"hibrido\"\n}"
     }
   ],
   "tareas": [
     {
       "id": "t01",
       "titulo": "Shadowing de llamada comercial",
-      "completada": false,
-      "fuente_doc": "doc_sales_01",
-      "completado": true
+      "completado": false,
+      "fuente_doc": "doc_sales_01"
     }
   ]
 }
