@@ -5,7 +5,8 @@ from copy import deepcopy
 from config import (
     DATA_DIR,
     ASSISTANT_CONFIG_DEFAULT,
-    KEY_CHECK
+    KEY_CHECK,
+    DEFAULT_CONTACT
     )
 
 from context import (
@@ -124,7 +125,10 @@ def procesar_turno(
         return respuesta_error('Turno no procesado',errores=errores)
     faqs=seleccion_faq(cargar_faq(DATA_DIR / 'faq_onboarding.json'),u_message)
     docs=seleccion_doc(cargar_docs(DATA_DIR / 'onboarding_docs.json'),faqs=faqs,pregunta=u_message)
-    contacto=seleccion_escalado(empresa=cargar_empresa(DATA_DIR / 'empresa.json'),doc=docs[0])
+    if docs:
+        contacto=seleccion_escalado(empresa=cargar_empresa(DATA_DIR / 'empresa.json'),doc=docs[0])
+    else:
+        contacto=DEFAULT_CONTACT
     if state['user_profile']:
         config=initialize_assistant(state.get('user_profile').get('perfil','dev_junior'))
     else:
