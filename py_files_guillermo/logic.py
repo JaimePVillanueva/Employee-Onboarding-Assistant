@@ -125,10 +125,11 @@ def procesar_turno(
         return respuesta_error('Turno no procesado',errores=errores)
     faqs=seleccion_faq(cargar_faq(DATA_DIR / 'faq_onboarding.json'),u_message)
     docs=seleccion_doc(cargar_docs(DATA_DIR / 'onboarding_docs.json'),faqs=faqs,pregunta=u_message)
+    empresa=cargar_empresa(DATA_DIR / 'empresa.json')
     if docs:
-        contacto=seleccion_escalado(empresa=cargar_empresa(DATA_DIR / 'empresa.json'),doc=docs[0])
+        contacto=seleccion_escalado(empresa=empresa,doc=docs[0])
     else:
-        contacto=DEFAULT_CONTACT
+        contacto=empresa['contactos'][DEFAULT_CONTACT]
     if state['user_profile']:
         config=initialize_assistant(state.get('user_profile').get('perfil','dev_junior'))
     else:
@@ -170,6 +171,7 @@ def procesar_checklist(
     if not dia:
         dia=1
     errores=valid_check(state,dia=dia)
+    state['user_profile']['dia']=dia
     if errores:
         return respuesta_error('Turno no procesado',errores=errores)
     comprobar_tareas(state=state,dia=dia)

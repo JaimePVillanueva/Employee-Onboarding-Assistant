@@ -1,7 +1,17 @@
-from copy import deepcopy
-from config import ASSISTANT_CONFIG_DEFAULT,DATA_DIR
-from logic import (procesar_turno,crear_estado_demo,procesar_checklist,inicializar_checklist)
-from context import (seleccion_empleado,cargar_empleados)
+from config import DATA_DIR
+
+from logic import (
+    procesar_turno,
+    crear_estado_demo,
+    procesar_checklist,
+    inicializar_checklist
+    )
+
+from context import (
+    seleccion_empleado,
+    cargar_empleados
+    )
+
 from validators import valid_id
 
 
@@ -57,13 +67,13 @@ Tokens salida: {data.get('metricas')['output_tokens']}
 --- FIN METRICAS MENSAJE RESUMEN ---
 ''')
     
-def demo_perfiles() -> None:
+def demo_1() -> None:
     print("=" * 60)
     print("1) conversación de 1 turno (empleado tipo dev junior).")
     print("=" * 60)
 
     pregunta = "¿Cuál es el horario de entrada?"
-    user_id='emp_01'
+    user_id='demo'
     error=valid_id(user_id)
     if error:
         raise ValueError(error)
@@ -71,9 +81,9 @@ def demo_perfiles() -> None:
     state=crear_estado_demo(empleado=empleado)
     imprimir_resultado(procesar_turno(state=state,u_message=pregunta))
 
-def demo_tareas()->None:
+def demo_2()->None:
     print("=" * 60)
-    print("1) creacion checklist.")
+    print("2) creacion checklist.")
     print("=" * 60)
     user_id='emp_01'
     error=valid_id(user_id)
@@ -93,8 +103,25 @@ Tokens salida: {metricas['output_tokens']}
 ''')
     imprimir_resultado_checklist(procesar_checklist(state=state))
     imprimir_resultado_checklist(procesar_checklist(state=state,dia=2))
+
+def demo_3()->None:
+    print("=" * 60)
+    print("3) conversación de 1 turno (empleado tipo comercial vs remoto UE).")
+    print("=" * 60)
+
+    pregunta = "¿Cuál es el horario de entrada?"
+    for user in ['emp_02','emp_03']:
+        error=valid_id(user)
+        if error:
+            raise ValueError(error)
+        empleado=seleccion_empleado(cargar_empleados(DATA_DIR / 'empleados_demo.json'),user)
+        state=crear_estado_demo(empleado=empleado)
+        imprimir_resultado(procesar_turno(state=state,u_message=pregunta))
+
 def main()->None:
-    demo_tareas()
+    demo_1()
+    demo_2()
+    demo_3()
 
 if __name__ == '__main__':
     main()

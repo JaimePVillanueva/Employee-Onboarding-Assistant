@@ -73,23 +73,29 @@ def seleccion_empleado(emps:list[dict],emp_id:str)->dict|None:
     for e in emps:
         if e.get('id')==emp_id:
             return e
-def seleccion_escalado(*,empresa:dict,doc:dict)->str:
-    contact=empresa.get('contactos',{})
-    contact_importance=dict.fromkeys(contact,0)
-    for k in contact_importance:
-        if contact.get(k) in doc['cuerpo'].lower():
+def seleccion_escalado(*, empresa: dict, doc: dict) -> str:
+    contact = empresa.get('contactos', {})
+    cuerpo = doc['cuerpo'].lower().strip()
+    id_doc = doc['id'].lower().strip()
+    departamento = doc['departamento'].lower().strip()
+    titulo = doc['titulo'].lower().strip()
+    tags = [t.lower().strip() for t in doc['tags']] if isinstance(doc['tags'], list) else []
+    for k in contact:
+        k_clean = k.lower().strip()
+        if contact.get(k) in cuerpo:
             return contact.get(k)
-        if k==DEFAULT_CONTACT:
+        if k == DEFAULT_CONTACT:
             continue
         if (
-            any(c in k for c in doc['cuerpo'].lower())
-            or any (t in k for t in doc['tags'].lower())
-            or any (t in k for t in doc['titulo'].lower())
-            or k in doc['id'].lower()
-            or k==doc['departamento'].lower()
-            ):
+            k_clean in cuerpo  
+            or k_clean in tags
+            or k_clean in titulo
+            or k_clean in id_doc
+            or k_clean == departamento
+        ):
             return contact.get(k)
-    return  contact.get(DEFAULT_CONTACT)
+            
+    return contact.get(DEFAULT_CONTACT)
 def lista_empleados(ruta:Path)->list[str]:
     empleados=cargar_empleados(ruta=ruta)
     return [e.get('id') for e in empleados]
