@@ -80,4 +80,6 @@ KEY_CHECK=(
     'fuente_doc'
 )
 
+DEFAULT_CONTACT='people_partner'
+
 RESUMEN='Genera un mensaje resumen breve de 1 linea sobre que hay que se va a hacer en el dia en un máximo de 50 caracteres'

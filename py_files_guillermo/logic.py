@@ -1,12 +1,44 @@
 import json
 
 from copy import deepcopy
-from config import (DATA_DIR,ASSISTANT_CONFIG_DEFAULT,KEY_CHECK)
-from context import (cargar_docs,cargar_faq,seleccion_doc,seleccion_faq)
-from gemini_client import(MetricasLlamada,safe_generate)
-from prompts import (build_assistant_prompt,prompt_tareas,comprobar_tareas,prompt_resumen_tareas)
-from state import (inicializar_estado,append_assistant,append_user)
-from validators import valid_data,valid_check
+
+from config import (
+    DATA_DIR,
+    ASSISTANT_CONFIG_DEFAULT,
+    KEY_CHECK
+    )
+
+from context import (
+    cargar_docs,
+    cargar_faq,
+    cargar_empresa,
+    seleccion_doc,
+    seleccion_faq,
+    seleccion_escalado
+    )
+
+from gemini_client import(
+    MetricasLlamada,
+    safe_generate
+    )
+
+from prompts import (
+    build_assistant_prompt,
+    prompt_tareas,
+    comprobar_tareas,
+    prompt_resumen_tareas
+    )
+
+from state import (
+    inicializar_estado,
+    append_assistant,
+    append_user
+    )
+
+from validators import (
+    valid_data,
+    valid_check
+    )
 
 def inicializar_checklist(*,state:dict)->dict:
     p_tareas=prompt_tareas(state=state,docs=cargar_docs(DATA_DIR / 'onboarding_docs.json'))
@@ -90,9 +122,9 @@ def procesar_turno(
     errores=valid_data(u_message,state)
     if errores:
         return respuesta_error('Turno no procesado',errores=errores)
-    
     faqs=seleccion_faq(cargar_faq(DATA_DIR / 'faq_onboarding.json'),u_message)
     docs=seleccion_doc(cargar_docs(DATA_DIR / 'onboarding_docs.json'),faqs=faqs,pregunta=u_message)
+    contacto=seleccion_escalado(empresa=cargar_empresa(DATA_DIR / 'empresa.json'),doc=docs[0])
     if state['user_profile']:
         config=initialize_assistant(state.get('user_profile').get('perfil','dev_junior'))
     else:
@@ -121,7 +153,8 @@ def procesar_turno(
             "perfil": config["perfil_activo"],
             "metricas": _metricas_to_dict(metricas),
             "faqs":faqs,
-            "docs":docs
+            "docs":docs,
+            'escalar': contacto
         },
     )
 

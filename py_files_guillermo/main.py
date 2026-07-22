@@ -21,6 +21,8 @@ def imprimir_resultado(respuesta:dict)->None:
 
 {data.get('respuesta','')}
 
+Para más información contacta con {data.get('escalar')}
+
 FAQs: {('\n -').join([f.get('pregunta','') for f in data.get('faqs',[])])}
 Docs: {('\n -').join([d.get('titulo','') for d in data.get('docs',[])])}
 

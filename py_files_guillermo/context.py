@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from config import (DOCS,FAQS)
+from config import (DOCS,FAQS,DEFAULT_CONTACT)
 
 def cargar_empleados(ruta:Path)->list[dict]:
     with ruta.open(encoding='utf-8') as e:
@@ -21,6 +21,13 @@ def cargar_docs(ruta:Path)->list[dict]:
         data=json.load(d)
     if not isinstance(data,list):
         raise ValueError ('empleados_demo.json debe ser una lista')
+    return data
+
+def cargar_empresa(ruta:Path)->dict:
+    with ruta.open(encoding='utf-8') as d:
+        data=json.load(d)
+    if not isinstance(data,dict):
+        raise ValueError ('empresa.json debe ser una lista')
     return data
 
 def seleccion_faq(faqs:list[dict],pregunta:str,max_faq:int = FAQS)-> list[dict]:
@@ -66,7 +73,23 @@ def seleccion_empleado(emps:list[dict],emp_id:str)->dict|None:
     for e in emps:
         if e.get('id')==emp_id:
             return e
-
+def seleccion_escalado(*,empresa:dict,doc:dict)->str:
+    contact=empresa.get('contactos',{})
+    contact_importance=dict.fromkeys(contact,0)
+    for k in contact_importance:
+        if contact.get(k) in doc['cuerpo'].lower():
+            return contact.get(k)
+        if k==DEFAULT_CONTACT:
+            continue
+        if (
+            any(c in k for c in doc['cuerpo'].lower())
+            or any (t in k for t in doc['tags'].lower())
+            or any (t in k for t in doc['titulo'].lower())
+            or k in doc['id'].lower()
+            or k==doc['departamento'].lower()
+            ):
+            return contact.get(k)
+    return  contact.get(DEFAULT_CONTACT)
 def lista_empleados(ruta:Path)->list[str]:
     empleados=cargar_empleados(ruta=ruta)
     return [e.get('id') for e in empleados]
