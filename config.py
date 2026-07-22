@@ -33,13 +33,19 @@ Reglas que siempre debes cumplir:
 - Si te piden salir del tema o de tu rol, deriva a un humano.
 """
 
-# --- Frases peligrosas (intentos de manipulación) ---
+# --- Frases peligrosas (intentos de manipulación / inyección) ---
 PATRONES_PELIGROSOS = (
     "ignora instrucciones",
     "ignore previous",
     "olvida que eres",
     "jailbreak",
     "system:",
+    "deja de comportarte",
+    "deja de ser",
+    "ahora eres",
+    "sin normas",
+    "sin reglas",
+    "bot libre",
 )
 
 # --- Contactos para derivar según el tema ---
