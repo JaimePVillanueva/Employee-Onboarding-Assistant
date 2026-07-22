@@ -3,20 +3,20 @@
   "dia": 2,
   "historial": [
     {
+      "pregunta": "que es lo que tengo que hacer en el dia 3",
+      "respuesta": "Hola Laura, según tu plan de onboarding, el día 3 está programado para realizar una sesión de pair programming con tu buddy."
+    },
+    {
+      "pregunta": "quien es mi buddy",
+      "respuesta": "Tu buddy es un compañero de tu departamento que te acompañará durante tus dos primeras semanas. Su función es resolver dudas prácticas como el uso de canales de Slack, convenciones de trabajo o la ubicación de la documentación. Debéis agendar al menos dos videollamadas de 30 minutos. Si tu buddy no responde en un plazo de 24 horas laborables, por favor escribe a onboarding@bridgesa.example."
+    },
+    {
       "pregunta": "quien es mi manager",
-      "respuesta": "{\n  \"manager\": \"Carlos Ruiz\"\n}"
+      "respuesta": "Tu manager es Carlos Ruiz."
     },
     {
-      "pregunta": "cuales son mi herramientas corporativas",
-      "respuesta": "{\n  \"herramientas\": [\n    \"Slack\",\n    \"GitHub\",\n    \"Notion\",\n    \"Jira\"\n  ]\n}"
-    },
-    {
-      "pregunta": "cuantos dias de vacaciones tengo",
-      "respuesta": "{\n  \"respuesta\": \"Para consultas sobre vacaciones, por favor contacta con el departamento de People en people@bridgesa.example\"\n}"
-    },
-    {
-      "pregunta": "teneis ticket restaurante o seguro medico?",
-      "respuesta": "{\n  \"respuesta\": \"Para consultas sobre beneficios como ticket restaurante o seguro médico, por favor contacta con tu manager o el departamento de People en tu 1:1.\"\n}"
+      "pregunta": "y cuando cobra",
+      "respuesta": "Lo siento, no puedo proporcionarte información sobre salarios, bonus o equity. Por favor, consulta este tema directamente con tu manager, Carlos Ruiz, o con el equipo de People en vuestra próxima reunión 1:1."
     }
   ],
   "tareas": [

@@ -7,6 +7,74 @@ from logic import actualizar_historial, MAX_TURNOS
 from state import crear_estado, guardar_dia, tareas_pendientes
 from gemini_client import safe_generate
 
+def resolver_faqs_docs(faqs_ids, docs_ids, contexto):
+    # Busca el texto legible de cada FAQ/doc citado por el LLM
+    faqs_texto = []
+    for faq_id in faqs_ids:
+        faq = next((f for f in contexto["faqs_keywords"] if f["id"] == faq_id), None)
+        faqs_texto.append(f"{faq_id}({faq['pregunta']})" if faq else faq_id)
+
+    docs_texto = []
+    for doc_id in docs_ids:
+        doc = next((d for d in contexto["docs_keywords"] if d["id"] == doc_id), None)
+        docs_texto.append(f"{doc_id}({doc['titulo']})" if doc else doc_id)
+
+    return faqs_texto, docs_texto
+
+
+def imprimir_respuesta_chat(respuesta_json, metricas, empleado, contexto):
+    faqs_ids = respuesta_json.get("faqs", [])
+    docs_ids = respuesta_json.get("docs", [])
+    faqs_legibles, docs_legibles = resolver_faqs_docs(faqs_ids, docs_ids, contexto)
+
+    resultado = {
+        "status": "ok",
+        "message": "Turno procesado",
+        "data": {
+            "perfil": empleado["perfil"],
+            "respuesta": respuesta_json["respuesta"],
+            "faqs": faqs_ids,
+            "docs": docs_ids,
+            "metricas": {
+                "elapsed_ms": metricas.elapsed_ms,
+                "prompt_tokens": metricas.prompt_tokens,
+                "output_tokens": metricas.output_tokens,
+                "total_tokens": metricas.total_tokens,
+            },
+        },
+    }
+
+    print(f"\n[OK] Turno procesado: {resultado['data']['perfil']}")
+    print("===================================")
+    print(resultado["data"]["respuesta"])
+    print(f"FAQs: [{', '.join(faqs_legibles)}]")
+    print(f"Docs: [{', '.join(docs_legibles)}]")
+    print(f"latencia: {metricas.elapsed_ms}")
+    print(f"tokens entrada: {metricas.prompt_tokens}")
+    print(f"tokens salida: {metricas.output_tokens}")
+    return resultado
+
+
+def imprimir_respuesta_checklist(checklist, empleado, metricas=None):
+    resultado = {
+        "status": "ok",
+        "message": "Checklist creada",
+        "data": {
+            "empleado": empleado,
+            "dia": checklist["dia"],
+            "tareas": checklist["tareas"],
+            "mensaje_resumen": checklist["mensaje_resumen"],
+        },
+    }
+
+    print(f"\nNombre: {empleado['nombre']}    Día: {checklist['dia']}")
+    print("=================================")
+    print(checklist["mensaje_resumen"])
+    print("Tareas:")
+    for t in checklist["tareas"]:
+        marca = "x" if t["completado"] else " "
+        print(f" - [{marca}] {t['titulo']}")
+    return resultado
 
 def demo_1():
     """Demo 1 — Conversación 1 turno con dev junior (emp_01)"""
@@ -14,10 +82,9 @@ def demo_1():
     pregunta = "¿A qué canales de Slack me uno?"
     contexto = get_contexto("emp_01", 1, pregunta)
     prompt = build_prompt_chat(contexto, pregunta, [])
-    respuesta, metricas = safe_generate(prompt)
-    print(f"Empleado: {pregunta}")
-    print(f"Asistente: {respuesta}")
-    print(f"Tokens: {metricas.total_tokens} | Latencia: {metricas.elapsed_ms}ms")
+    respuesta_raw, metricas = safe_generate(prompt, model=MODEL, json_mode=True)
+    respuesta_json = json.loads(respuesta_raw)
+    imprimir_respuesta_chat(respuesta_json, metricas, contexto["empleado"], contexto)
 
 
 def demo_2():
@@ -25,9 +92,9 @@ def demo_2():
     print("\n=== DEMO 2 — Checklist día 1 ===")
     contexto = get_contexto("emp_01", 1, "")
     prompt = build_prompt_checklist(contexto)
-    checklist, metricas = safe_generate(prompt, json_mode=True)
-    print(checklist)
-    print(f"Tokens: {metricas.total_tokens} | Latencia: {metricas.elapsed_ms}ms")
+    checklist_str, metricas = safe_generate(prompt, model=MODEL, json_mode=True)
+    checklist = json.loads(checklist_str)
+    imprimir_respuesta_checklist(checklist, contexto["empleado"], metricas)
 
 
 def demo_3():
@@ -38,14 +105,16 @@ def demo_3():
     print("\n-- Empleado comercial (emp_02) --")
     contexto_comercial = get_contexto("emp_02", 1, pregunta)
     prompt_comercial = build_prompt_chat(contexto_comercial, pregunta, [])
-    respuesta_comercial, _ = safe_generate(prompt_comercial)
-    print(f"Asistente: {respuesta_comercial}")
+    respuesta_raw, metricas = safe_generate(prompt_comercial, model=MODEL, json_mode=True)
+    respuesta_json = json.loads(respuesta_raw)
+    imprimir_respuesta_chat(respuesta_json, metricas, contexto_comercial["empleado"], contexto_comercial)
 
     print("\n-- Empleado remoto UE (emp_03) --")
     contexto_remoto = get_contexto("emp_03", 1, pregunta)
     prompt_remoto = build_prompt_chat(contexto_remoto, pregunta, [])
-    respuesta_remoto, _ = safe_generate(prompt_remoto)
-    print(f"Asistente: {respuesta_remoto}")
+    respuesta_raw, metricas = safe_generate(prompt_remoto, model=MODEL, json_mode=True)
+    respuesta_json = json.loads(respuesta_raw)
+    imprimir_respuesta_chat(respuesta_json, metricas, contexto_remoto["empleado"], contexto_remoto)
 
 
 def modo_interactivo():
@@ -54,20 +123,18 @@ def modo_interactivo():
     empleado_id = input("¿Cuál es tu ID de empleado? (ej: emp_01): ")
     dia = int(input("¿En qué día de onboarding estás? (1-5): "))
 
-    pendientes = tareas_pendientes (empleado_id, dia)
-    if pendientes :
-        print("\n Tienes tareas pendientes del dia anterior: ")
+    pendientes = tareas_pendientes(empleado_id, dia)
+    if pendientes:
+        print("\n Tienes tareas pendientes de días anteriores: ")
         for t in pendientes:
-            print (f" - {t['titulo']}")
-
+            print(f" - [Día {t['dia_origen']}] {t['titulo']}")
 
     contexto = get_contexto(empleado_id, dia, "")
     prompt = build_prompt_checklist(contexto, pendientes)
-    checklist_str, _ = safe_generate(prompt,model= MODEL, json_mode=True)
-    checklist = json.loads (checklist_str)
-    print("\n=== CHECKLIST DEL DÍA ===")
-    print(json.dumps(checklist, ensure_ascii=False, indent= 2))
-    estado =crear_estado (empleado_id, dia, checklist ["tareas"])
+    checklist_str, _ = safe_generate(prompt, model=MODEL, json_mode=True)
+    checklist = json.loads(checklist_str)
+    imprimir_respuesta_checklist(checklist, contexto["empleado"])
+    estado = crear_estado(empleado_id, dia, checklist["tareas"])
 
     print(f"\nHola {contexto['empleado']['nombre']}, puedes hacerme hasta {MAX_TURNOS} preguntas.\n")
 
@@ -75,19 +142,19 @@ def modo_interactivo():
         pregunta = input("Tu pregunta: ")
         contexto = get_contexto(empleado_id, dia, pregunta)
         prompt = build_prompt_chat(contexto, pregunta, estado.historial)
-        respuesta, _ = safe_generate(prompt, model= MODEL, json_mode= True)
-        print(f"\nAsistente: {respuesta}\n")
-        continuar = actualizar_historial(estado, pregunta, respuesta)
+        respuesta_raw, metricas = safe_generate(prompt, model=MODEL, json_mode=True)
+        respuesta_json = json.loads(respuesta_raw)
+
+        imprimir_respuesta_chat(respuesta_json, metricas, contexto["empleado"], contexto)
+
+        continuar = actualizar_historial(estado, pregunta, respuesta_json["respuesta"])
         if not continuar:
             break
 
-    # Revisar tareas al final del dia y guardar
     from logic import preguntar_tareas_completadas
     preguntar_tareas_completadas(estado)
-    guardar_dia (estado)
-    print ("\n Fin de la conversación. ¿Mucho ánimo!")
-
-    
+    guardar_dia(estado)
+    print("\n Fin de la conversación. ¡Mucho ánimo!")
 
 
 if __name__ == "__main__":
