@@ -1,0 +1,12 @@
+# Entorn virtual
+venv/
+
+# Claus secretes
+.env
+
+# Cache de Python
+__pycache__/
+*.pyc
+
+# Arxius del sistema
+.DS_Store
