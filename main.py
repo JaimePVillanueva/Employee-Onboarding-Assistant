@@ -7,25 +7,19 @@ from logic import actualizar_historial, MAX_TURNOS
 from state import crear_estado, guardar_dia, tareas_pendientes
 from gemini_client import safe_generate
 
-def resolver_faqs_docs(faqs_ids, docs_ids, contexto):
-    # Busca el texto legible de cada FAQ/doc citado por el LLM
-    faqs_texto = []
-    for faq_id in faqs_ids:
-        faq = next((f for f in contexto["faqs_keywords"] if f["id"] == faq_id), None)
-        faqs_texto.append(f"{faq_id}({faq['pregunta']})" if faq else faq_id)
-
-    docs_texto = []
-    for doc_id in docs_ids:
-        doc = next((d for d in contexto["docs_keywords"] if d["id"] == doc_id), None)
-        docs_texto.append(f"{doc_id}({doc['titulo']})" if doc else doc_id)
-
+def resolver_faqs_docs(contexto):
+    # Ya no dependemos de que el LLM cite IDs correctamente.
+    # Usamos directamente lo que Python ya encontró por keywords,
+    # así evitamos mostrar IDs inventados o mal recordados por el modelo.
+    faqs_texto = [f"{f['id']}({f['pregunta']})" for f in contexto["faqs_keywords"]]
+    docs_texto = [f"{d['id']}({d['titulo']})" for d in contexto["docs_keywords"]]
     return faqs_texto, docs_texto
 
 
 def imprimir_respuesta_chat(respuesta_json, metricas, empleado, contexto):
-    faqs_ids = respuesta_json.get("faqs", [])
-    docs_ids = respuesta_json.get("docs", [])
-    faqs_legibles, docs_legibles = resolver_faqs_docs(faqs_ids, docs_ids, contexto)
+    faqs_legibles, docs_legibles =resolver_faqs_docs(contexto)
+
+    
 
     resultado = {
         "status": "ok",
@@ -33,8 +27,8 @@ def imprimir_respuesta_chat(respuesta_json, metricas, empleado, contexto):
         "data": {
             "perfil": empleado["perfil"],
             "respuesta": respuesta_json["respuesta"],
-            "faqs": faqs_ids,
-            "docs": docs_ids,
+            "faqs": [f["id"] for f in contexto["faqs_keywords"]],
+            "docs": [d["id"] for d in contexto["docs_keywords"]],
             "metricas": {
                 "elapsed_ms": metricas.elapsed_ms,
                 "prompt_tokens": metricas.prompt_tokens,
