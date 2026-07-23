@@ -1,0 +1,30 @@
+{
+  "empleado_id": "emp_02",
+  "dia": 3,
+  "historial": [
+    {
+      "pregunta": "cuales son los valores de Bridge SA",
+      "respuesta": "{\n  \"valores\": [\n    \"Feedback directo y respetuoso\",\n    \"Aprendizaje continuo\",\n    \"Documentar antes de escalar\",\n    \"Privacidad de clientes y empleados\"\n  ]\n}"
+    },
+    {
+      "pregunta": "que es lo que tenia que hacer ayer",
+      "respuesta": "{\n  \"actividad_dia_2\": \"Formación en catálogo de programas (abiertos y corporates)\"\n}"
+    },
+    {
+      "pregunta": "quien es mi manager",
+      "respuesta": "{\n  \"respuesta\": \"No cuento con esa información en la documentación proporcionada. Por favor, deriva tu consulta a onboarding@bridgesa.example.\"\n}"
+    },
+    {
+      "pregunta": "Cual es mi perfil",
+      "respuesta": "{\n  \"nombre\": \"Pablo Navarro\",\n  \"rol\": \"Account Executive\",\n  \"departamento\": \"sales\",\n  \"dia_de_onboarding\": 3,\n  \"modalidad\": \"hibrido\"\n}"
+    }
+  ],
+  "tareas": [
+    {
+      "id": "t01",
+      "titulo": "Shadowing de llamada comercial",
+      "completado": false,
+      "fuente_doc": "doc_sales_01"
+    }
+  ]
+}
