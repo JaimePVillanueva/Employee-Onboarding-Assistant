@@ -1,0 +1,42 @@
+{
+  "empleado_id": "emp_01",
+  "dia": 2,
+  "historial": [
+    {
+      "pregunta": "que es lo que tengo que hacer en el dia 3",
+      "respuesta": "Hola Laura, según tu plan de onboarding, el día 3 está programado para realizar una sesión de pair programming con tu buddy."
+    },
+    {
+      "pregunta": "quien es mi buddy",
+      "respuesta": "Tu buddy es un compañero de tu departamento que te acompañará durante tus dos primeras semanas. Su función es resolver dudas prácticas como el uso de canales de Slack, convenciones de trabajo o la ubicación de la documentación. Debéis agendar al menos dos videollamadas de 30 minutos. Si tu buddy no responde en un plazo de 24 horas laborables, por favor escribe a onboarding@bridgesa.example."
+    },
+    {
+      "pregunta": "quien es mi manager",
+      "respuesta": "Tu manager es Carlos Ruiz."
+    },
+    {
+      "pregunta": "y cuando cobra",
+      "respuesta": "Lo siento, no puedo proporcionarte información sobre salarios, bonus o equity. Por favor, consulta este tema directamente con tu manager, Carlos Ruiz, o con el equipo de People en vuestra próxima reunión 1:1."
+    }
+  ],
+  "tareas": [
+    {
+      "id": "t01",
+      "titulo": "Configurar entorno local (Python 3.10+)",
+      "completado": false,
+      "fuente_doc": "doc_eng_01"
+    },
+    {
+      "id": "t02",
+      "titulo": "Instalar Docker (opcional)",
+      "completado": false,
+      "fuente_doc": "doc_eng_01"
+    },
+    {
+      "id": "t03",
+      "titulo": "Configurar acceso al entorno de staging",
+      "completado": false,
+      "fuente_doc": "doc_eng_01"
+    }
+  ]
+}
