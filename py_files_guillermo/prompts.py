@@ -7,6 +7,17 @@ from config import (
     )
 
 def build_faqs_block(faqs: list[dict]) -> str:
+    """Genera el bloque de las faqs relevantes previamente selccionadas
+
+    Formato:
+    
+    --- FAQs ---
+
+    P: 
+    
+    R:
+
+    --- FIN FAQs ---"""
     if not faqs:
         return ""
     lines = ["--- FAQs ---"]
@@ -19,6 +30,19 @@ def build_faqs_block(faqs: list[dict]) -> str:
     return "\n".join(lines)
 
 def build_docs_block(docs:list[dict]) -> str:
+    """Genera el bloque de los docs relevantes previamente selccionados
+
+        Formato:
+        
+        --- DOCs ---
+
+        Titulo:
+
+        Departamento:
+
+        Cuerpo:
+
+        --- FIN DOCs ---"""
     if not docs:
         return ""
     lines = ["--- DOCs ---"]
@@ -32,12 +56,30 @@ def build_docs_block(docs:list[dict]) -> str:
     return "\n".join(lines)
 
 def build_history_block(messages: list[dict]) -> str:
-    """Formatea el historial reciente como texto."""
+    """Genera el bloque de los mensajes previos
+
+        Formato:
+
+        user:
+    
+        system:"""
     if not messages:
         return "(sin turnos previos en la ventana)"
     return "\n".join(f"{m['role']}: {m['text']}" for m in messages)
 
 def build_documentation_block(*,faqs:list[dict],docs:list[dict])->str:
+    """Genera el bloque de los bloques de faqs y docs
+
+            Formato:
+            
+            '===== DOCUMENTACIÓN ====='
+
+            bloque facs
+
+            bloque docs
+
+            '===== FIN DOCUMENTACIÓN ====='"""
+    
     return f'''
 ===== DOCUMENTACIÓN =====
 
@@ -49,19 +91,33 @@ def build_documentation_block(*,faqs:list[dict],docs:list[dict])->str:
 '''.strip()
 
 def build_tareas_block(tareas:list[dict]) -> str:
+    """Genera el bloque de los docs relevantes previamente selccionados
+    
+            Formato:
+            
+            --- TAREAS ---
+    
+            Id:
+    
+            Dia:
+    
+            Titulo:
+    
+            --- FIN TAREAS ---"""
     if not tareas:
         return ""
     lines = ["--- TAREAS ---"]
     # for d in range (len(docs)):
     for t in tareas:
+        lines.append(f"Id: {t.get('id','')}")
+        lines.append(f'Dia: {t.get('dia',1)}')
         lines.append(f"Titulo: {t.get('titulo','')}")
-        lines.append(f'Departamento: {t.get('departamento','')}')
-        lines.append(f"Cuerpo: {t.get('cuerpo','')}")
         lines.append("")
     lines.append("--- FIN TAREAS ---")
     return "\n".join(lines)
 
 def resolver_perfil(assistant_config: dict) -> dict:
+    """Deveulve configuracion del perfil"""
     clave = assistant_config["perfil_activo"]
     if clave not in PERFILES:
         raise ValueError(f"Perfil desconocido: {clave}")
@@ -129,6 +185,11 @@ Debes responder en idioma {user.get('idioma_preferido')}
 {JSON_SCHEMA_CHECKLIST}
 '''
 def comprobar_tareas(*,state:dict,dia:int)->None:
+    """Genera mensajes por terminal para interactuar con el usuario
+    
+    Interacción:
+    
+    Has completado (tarea)? S/N: (usuario responde con S a Sí y con N a No)"""
     tareas=state.get('tareas',[])
     for t in tareas:
         if t.get('dia',1)<dia and not t.get('completada',False):
