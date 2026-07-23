@@ -6,6 +6,9 @@ from prompts import build_prompt_chat, build_prompt_checklist
 from logic import actualizar_historial, MAX_TURNOS
 from state import crear_estado, guardar_dia, tareas_pendientes
 from gemini_client import safe_generate
+from validators import verificar_preguntas_json, verificar_entregables
+from error import EscenarioNoAceptado
+
 
 def resolver_faqs_docs(contexto):
     # Ya no dependemos de que el LLM cite IDs correctamente.
@@ -72,6 +75,14 @@ def imprimir_respuesta_checklist(checklist, empleado, metricas=None):
 
 def demo_1():
     """Demo 1 — Conversación 1 turno con dev junior (emp_01)"""
+    print("Comprobando archivos...")
+    ok_preguntas, errores_preguntas = verificar_preguntas_json()
+    ok_entregables, errores_entregables = verificar_entregables()
+    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
+        print("Archivos comprobados y aceptados")
+    else:
+        print(errores_entregables, errores_preguntas)
+        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
     print("\n=== DEMO 1 — Conversación dev junior ===")
     pregunta = "¿A qué canales de Slack me uno?"
     contexto = get_contexto("emp_01", 1, pregunta)
@@ -83,6 +94,14 @@ def demo_1():
 
 def demo_2():
     """Demo 2 — Checklist JSON día 1"""
+    print("Comprobando archivos...")
+    ok_preguntas, errores_preguntas = verificar_preguntas_json()
+    ok_entregables, errores_entregables = verificar_entregables()
+    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
+        print("Archivos comprobados y aceptados")
+    else:
+        print(errores_entregables, errores_preguntas)
+        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
     print("\n=== DEMO 2 — Checklist día 1 ===")
     contexto = get_contexto("emp_01", 1, "")
     prompt = build_prompt_checklist(contexto)
@@ -93,6 +112,14 @@ def demo_2():
 
 def demo_3():
     """Demo 3 — Mismo mensaje con comercial vs remoto UE"""
+    print("Comprobando archivos...")
+    ok_preguntas, errores_preguntas = verificar_preguntas_json()
+    ok_entregables, errores_entregables = verificar_entregables()
+    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
+        print("Archivos comprobados y aceptados")
+    else:
+        print(errores_entregables, errores_preguntas)
+        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
     print("\n=== DEMO 3 — Comercial vs Remoto UE ===")
     pregunta = "¿Puedo trabajar desde otro país esta semana?"
 
@@ -113,6 +140,14 @@ def demo_3():
 
 def modo_interactivo():
     """Modo interactivo — el empleado hace preguntas"""
+    print("Comprobando archivos...")
+    ok_preguntas, errores_preguntas = verificar_preguntas_json()
+    ok_entregables, errores_entregables = verificar_entregables()
+    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
+        print("Archivos comprobados y aceptados")
+    else:
+        print(errores_entregables, errores_preguntas)
+        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
     print("\n=== ASISTENTE DE ONBOARDING BRIDGE SA ===")
     empleado_id = input("¿Cuál es tu ID de empleado? (ej: emp_01): ")
     dia = int(input("¿En qué día de onboarding estás? (1-5): "))

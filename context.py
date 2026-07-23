@@ -2,14 +2,14 @@ import json
 import os
 
 def get_empresa():
-    with open("data/empresa.json", "r") as f:
+    with open("data/empresa.json", "r", encoding="utf-8") as f:
         return json.load(f)
     
 #--- Función: get_doc_por_id ---
 # Busca un documento concreto por su ID. La reutilizamos para
 # enlazar cada FAQ con su documento asociado (doc_id).
 def get_doc_por_id(doc_id):
-    with open("data/onboarding_docs.json", "r") as f:
+    with open("data/onboarding_docs.json", "r", encoding="utf-8") as f:
         docs = json.load(f)
     return next((d for d in docs if d["id"] == doc_id), None)
 
@@ -19,7 +19,7 @@ def get_doc_por_id(doc_id):
 # Además, adjunta el documento completo asociado a cada FAQ (vía doc_id)
 # para dar más contexto al LLM, aunque ese doc no coincida por sus propios tags.
 def get_faqs_por_keywords(pregunta):
-    with open("data/faq_onboarding.json", "r") as f:
+    with open("data/faq_onboarding.json", "r", encoding="utf-8") as f:
         faqs = json.load(f)
     palabras = pregunta.lower().split()
     resultado = []
@@ -35,7 +35,7 @@ def get_faqs_por_keywords(pregunta):
 # ¿Por qué una función separada? La lógica se reutiliza en varios lugares.
 
 def get_empleado(empleado_id):
-    with open("data/empleados_demo.json", "r") as f:
+    with open("data/empleados_demo.json", "r", encoding="utf-8") as f:
         empleados =json.load(f)
     for x in empleados:
         if x["id"] == empleado_id:
@@ -49,7 +49,7 @@ def get_empleado(empleado_id):
 
 
 def get_docs_por_departamento(departamento):
-    with open("data/onboarding_docs.json", "r") as f:
+    with open("data/onboarding_docs.json", "r", encoding="utf-8") as f:
         docs =json.load(f)
         #Orden de importancia: Primero el departamento del empleado.
         #Luego los genericos que aplican a todos.
@@ -69,7 +69,7 @@ def get_docs_por_departamento(departamento):
 # ¿Por qué? Porque no queremos mandar TODOS los docs al LLM en cada pregunta.
 # Eso sería caro y lento. Solo mandamos los relevantes.
 def get_docs_por_keywords(pregunta):
-    with open("data/onboarding_docs.json", "r") as f:
+    with open("data/onboarding_docs.json", "r", encoding="utf-8") as f:
         docs= json.load(f)
     palabras= pregunta.lower().split()
     acumulador_tag = []
