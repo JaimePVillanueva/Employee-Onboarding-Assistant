@@ -25,10 +25,7 @@ from google.genai import types
 # para poder cambiarlos sin tocar el config compartido.
 # ============================================
 
-MODELOS_BENCHMARK = [
-    "gemini-flash-latest",
-    "gemini-flash-lite-latest",
-]
+from config import MODELS
 
 TEMPERATURA_BENCHMARK = 0.2   # misma para los dos = condiciones iguales
 
@@ -129,13 +126,13 @@ def ejecutar_benchmark() -> list[FilaBenchmark]:
     filas: list[FilaBenchmark] = []
 
     print("=" * 60)
-    print(f"BENCHMARK — {len(casos)} casos x {len(MODELOS_BENCHMARK)} modelos")
+    print(f"BENCHMARK — {len(casos)} casos x {len(MODELS)} modelos")
     print(f"Temperatura: {TEMPERATURA_BENCHMARK}")
     print("=" * 60)
 
     for caso in casos:
         print(f"\n--- {caso['id']} ---")
-        for modelo in MODELOS_BENCHMARK:
+        for modelo in MODELS:
             fila = llamar_modelo(modelo, caso["prompt"], caso["id"])
             filas.append(fila)
             if fila.error:
@@ -159,7 +156,7 @@ def generar_tabla(filas: list[FilaBenchmark]) -> Path:
         "# Resultados del benchmark",
         "",
         f"- Temperatura: {TEMPERATURA_BENCHMARK}",
-        f"- Modelos: {', '.join(MODELOS_BENCHMARK)}",
+        f"- Modelos: {', '.join(MODELS)}",
         "",
         "## Medias por modelo",
         "",
@@ -167,7 +164,7 @@ def generar_tabla(filas: list[FilaBenchmark]) -> Path:
         "|--------|:--------:|:-------------------:|:-------------:|",
     ]
 
-    for modelo in MODELOS_BENCHMARK:
+    for modelo in MODELS:
         ok = [f for f in filas if f.modelo == modelo and not f.error]
         if ok:
             lat = mean(f.elapsed_ms for f in ok)
@@ -213,14 +210,14 @@ def main() -> None:
     print("\n" + "=" * 60)
     print("RESUMEN")
     print("=" * 60)
-    for modelo in MODELOS_BENCHMARK:
+    for modelo in MODELS:
         ok = [f for f in filas if f.modelo == modelo and not f.error]
         if ok:
             lat = mean(f.elapsed_ms for f in ok)
             toks = [f.total_tokens for f in ok if f.total_tokens]
             tok = mean(toks) if toks else 0
             print(f"\n{modelo}:")
-            print(f"  Casos OK: {len(ok)}/{len(filas)//len(MODELOS_BENCHMARK)}")
+            print(f"  Casos OK: {len(ok)}/{len(filas)//len(MODELS)}")
             print(f"  Latencia media: {lat:.0f} ms")
             print(f"  Tokens medios: {tok:.0f}")
         else:

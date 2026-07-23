@@ -6,8 +6,9 @@ from logic import (
     inicializar_checklist,
 )
 from context import seleccion_empleado, cargar_empleados
-from validators import valid_id
+from validators import valid_id,verificar_preguntas_json, verificar_entregables
 from state import guardar_estado, cargar_estado, tareas_pendientes_dias_anteriores
+from error import EscenarioNoAceptado
 
 MAX_TURNOS = 4
 
@@ -67,6 +68,14 @@ Tokens salida: {data.get('metricas')['output_tokens']}
 
 
 def demo_1() -> None:
+    print("Comprobando archivos...")
+    ok_preguntas, errores_preguntas = verificar_preguntas_json()
+    ok_entregables, errores_entregables = verificar_entregables()
+    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
+        print("Archivos comprobados y aceptados")
+    else:
+        print(errores_entregables, errores_preguntas)
+        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
     print("=" * 60)
     print("1) conversación de 1 turno (empleado tipo dev junior).")
     print("=" * 60)
@@ -78,9 +87,18 @@ def demo_1() -> None:
     empleado = seleccion_empleado(cargar_empleados(DATA_DIR / 'empleados_demo.json'), user_id)
     state = crear_estado_demo(empleado=empleado)
     imprimir_resultado(procesar_turno(state=state, u_message=pregunta))
+    
 
 
 def demo_2() -> None:
+    print("Comprobando archivos...")
+    ok_preguntas, errores_preguntas = verificar_preguntas_json()
+    ok_entregables, errores_entregables = verificar_entregables()
+    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
+        print("Archivos comprobados y aceptados")
+    else:
+        print(errores_entregables, errores_preguntas)
+        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
     print("=" * 60)
     print("2) creacion checklist.")
     print("=" * 60)
@@ -105,6 +123,14 @@ Tokens salida: {metricas['output_tokens']}
 
 
 def demo_3() -> None:
+    print("Comprobando archivos...")
+    ok_preguntas, errores_preguntas = verificar_preguntas_json()
+    ok_entregables, errores_entregables = verificar_entregables()
+    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
+        print("Archivos comprobados y aceptados")
+    else:
+        print(errores_entregables, errores_preguntas)
+        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
     print("=" * 60)
     print("3) conversación de 1 turno (empleado tipo comercial vs remoto UE).")
     print("=" * 60)
@@ -118,6 +144,14 @@ def demo_3() -> None:
         imprimir_resultado(procesar_turno(state=state, u_message=pregunta))
 
 def modo_interactivo() -> None:
+    print("Comprobando archivos...")
+    ok_preguntas, errores_preguntas = verificar_preguntas_json()
+    ok_entregables, errores_entregables = verificar_entregables()
+    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
+        print("Archivos comprobados y aceptados")
+    else:
+        print(errores_entregables, errores_preguntas)
+        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
     print("=" * 60)
     print("MODO INTERACTIVO — ASISTENTE DE ONBOARDING BRIDGE SA")
     print("=" * 60)

@@ -41,6 +41,15 @@ from validators import (
     valid_check
     )
 
+from benchmark import ejecutar_benchmark
+
+from report import (
+    guardar_csv,
+    _medias_por_modelo,
+    generar_reporte_md,
+    guardar_json
+    )
+
 def inicializar_checklist(*,state:dict)->dict:
     p_tareas=prompt_tareas(state=state,docs=cargar_docs(DATA_DIR / 'onboarding_docs.json')) #Genera el prompt para pedir que asigne tareas al usuario
     try:
@@ -151,6 +160,14 @@ def procesar_turno( #El eje central del asistente conversacional
     #Actualizamos el historial
     append_user(state, u_message) 
     append_assistant(state, texto)
+
+    print("Ejecutando benchmark...")
+    filas = ejecutar_benchmark(prompt)
+    csv_path = guardar_csv(filas)
+    md_path = generar_reporte_md(filas, csv_path)
+    print(f"\nCSV: {csv_path}")
+    print(f"Informe: {md_path}")
+    print("\nSiguiente: completa entregables/matriz_decision.md y recomendacion.md")
 
     return respuesta_ok( #Devolvemos la respuesta de la API
         "Turno procesado",

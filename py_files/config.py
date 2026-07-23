@@ -1,13 +1,22 @@
 MODEL = "gemini-3.1-flash-lite"
+MODELS = [
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+]
 TEMPERATURE = 0.3
 TEMPERATURE_VULNERABLE = 0.3
 MAX_INPUT_TOKENS=8_000
 MAX_INPUT_CHARS=2_000
+MIN_PREGUNTAS = 0
 WINDOW=4
 DOCS=3
 FAQS=2
 from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent / "data"
+ENTREGABLES_DIR = Path(__file__).parent.parent / "benchmark" ## Entra en la carpeta entregables
+PREGUNTAS_PATH = DATA_DIR / "faq_onboarding.json" ## Entra en el archivo faq_onboarding.json
+OUTPUT_DIR = Path(__file__).parent.parent / "output" ## Entra en la carpeta output
+DATA_DIR = Path(__file__).parent.parent / "data" ## Entra en la carpeta data
 
 PERFILES={
     'dev_junior':{

@@ -1,0 +1,2 @@
+class EscenarioNoAceptado(Exception):
+    pass
