@@ -13,10 +13,11 @@ DOCS=3
 FAQS=2
 from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent / "data"
-ENTREGABLES_DIR = Path(__file__).parent.parent / "benchmark" ## Entra en la carpeta entregables
+ENTREGABLES_DIR = Path(__file__).parent.parent / "entregables" ## Entra en la carpeta entregables
 PREGUNTAS_PATH = DATA_DIR / "faq_onboarding.json" ## Entra en el archivo faq_onboarding.json
 OUTPUT_DIR = Path(__file__).parent.parent / "output" ## Entra en la carpeta output
 DATA_DIR = Path(__file__).parent.parent / "data" ## Entra en la carpeta data
+DIAS_DIR= Path(__file__).parent.parent / "dias"
 
 PERFILES={
     'dev_junior':{

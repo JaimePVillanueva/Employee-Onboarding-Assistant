@@ -10,6 +10,15 @@ from validators import valid_id,verificar_preguntas_json, verificar_entregables
 from state import guardar_estado, cargar_estado, tareas_pendientes_dias_anteriores
 from error import EscenarioNoAceptado
 
+from benchmark import ejecutar_benchmark
+
+from report import (
+    guardar_csv,
+    _medias_por_modelo,
+    generar_reporte_md,
+    guardar_json
+    )
+
 MAX_TURNOS = 4
 
 
@@ -204,6 +213,15 @@ Tokens salida: {metricas['output_tokens']}
     guardar_estado(user_id, state)
     print("\nFin de la conversación. ¡Mucho ánimo!")
 
+def do_benchmark()->None:
+    print("Ejecutando benchmark...")
+    filas = ejecutar_benchmark()
+    csv_path = guardar_csv(filas)
+    md_path = generar_reporte_md(filas, csv_path)
+    print(f"\nCSV: {csv_path}")
+    print(f"Informe: {md_path}")
+    print("\nSiguiente: completa entregables/matriz_decision.md y recomendacion.md")
+
 
 # def main() -> None:
 #     demo_1()
@@ -217,8 +235,9 @@ if __name__ == "__main__":
     print("2 — Demo checklist")
     print("3 — Demo comercial vs remoto UE")
     print("4 — Modo interactivo")
+    print("5 _ Realizar Benchmark")
 
-    opcion = input("\nElige (1-4): ")
+    opcion = input("\nElige (1-5): ")
 
     if opcion == "1":
         demo_1()
@@ -228,5 +247,8 @@ if __name__ == "__main__":
         demo_3()
     elif opcion == "4":
         modo_interactivo()
+    elif opcion== "5":
+        do_benchmark()
     else:
         print("Opción no válida.")
+    

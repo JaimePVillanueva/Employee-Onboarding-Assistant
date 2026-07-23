@@ -25,13 +25,10 @@ from google.genai import types
 # para poder cambiarlos sin tocar el config compartido.
 # ============================================
 
-from config import MODELS
+from config import MODELS,DATA_DIR,OUTPUT_DIR
 
 TEMPERATURA_BENCHMARK = 0.2   # misma para los dos = condiciones iguales
 
-BASE_DIR = Path(__file__).parent
-DATA_DIR = BASE_DIR / "data"
-OUTPUT_DIR = BASE_DIR / "output"
 
 
 # ============================================
