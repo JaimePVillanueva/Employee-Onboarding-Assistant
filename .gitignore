@@ -1,7 +1,6 @@
-#Enviroment
-venv/
 .env
-
-
-#Guillermo
-prueba.ipynb
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+output/
