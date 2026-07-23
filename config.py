@@ -3,10 +3,10 @@ from pathlib import Path
 MODELS = [
     "gemini-3.1-flash-lite",
 ]
-MODEL= MODELS[0]
+MODEL = MODELS[0]
 
-TEMPERATURE = 0.2 ## Establecemos la temperatura a 0.2 como aconseja el enunciado
-TEMPERATURE_VULNERABLE = 0.2 ## También la establecemos a 0.2, más adelante se puede cambiar para observar comportamiento
+TEMPERATURE = 0.3 ## Establecemos la temperatura a 0.2 como aconseja el enunciado
+TEMPERATURE_VULNERABLE = 0.3 ## También la establecemos a 0.2, más adelante se puede cambiar para observar comportamiento
 WINDOW = 4
 MAX_TOKENS_INPUT = 8_000
 MAX_INPUT_CHARS = 2_000
