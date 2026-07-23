@@ -1,125 +1,234 @@
 # ============================================
-# BENCHMARK (Parte 4): comparar 2 modelos
+# BENCHMARK (Parte 4)
+#
+# Ejecuta los 10 casos en 2 modelos y genera las FilaBenchmark.
+# El CSV lo genera report.py (guardar_csv).
+# La tabla de resultados la genera este mismo fichero.
 # ============================================
 
+import os
 import json
-import csv
 import time
+import getpass
 from pathlib import Path
+from dataclasses import dataclass
+from statistics import mean
 
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from config import DATA_DIR, TEMPERATURE
-from asistente import configurar_api, construir_prompt
-from datos import buscar_empleado, seleccionar_faqs, seleccionar_docs
-from robustez import analizar_amenaza, respuesta_segura
+
+# ============================================
+# CONFIGURACIÓN DEL BENCHMARK
+# Independiente: los modelos a comparar se definen aquí,
+# para poder cambiarlos sin tocar el config compartido.
+# ============================================
+
+MODELOS_BENCHMARK = [
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+]
+
+TEMPERATURA_BENCHMARK = 0.2   # misma para los dos = condiciones iguales
+
+BASE_DIR = Path(__file__).parent
+DATA_DIR = BASE_DIR / "data"
+OUTPUT_DIR = BASE_DIR / "output"
 
 
-# --- Los 2 modelos que comparamos (misma temperatura) ---
-MODELOS = ["gemini-flash-latest", "gemini-flash-lite-latest"]
-TEMPERATURA_BENCHMARK = 0.2   # la misma para los dos (condiciones iguales)
+# ============================================
+# ESTRUCTURA DE DATOS
+# report.py importa esta clase: los campos deben coincidir.
+# ============================================
 
-# --- Carpeta de salida ---
-OUTPUT_DIR = Path(__file__).parent / "output"
-OUTPUT_DIR.mkdir(exist_ok=True)   # crea la carpeta si no existe
+@dataclass
+class FilaBenchmark:
+    pregunta_id: str
+    modelo: str
+    elapsed_ms: int
+    prompt_tokens: int | None
+    output_tokens: int | None
+    total_tokens: int | None
+    respuesta: str
+    error: str | None
 
 
-def llamar_modelo(modelo, prompt):
-    """Llama a un modelo concreto y devuelve (respuesta, tiempo_ms, tokens)."""
-    cliente = genai.Client()
+# ============================================
+# CLIENTE DE GEMINI
+# ============================================
+
+_client = None
+
+def configurar_api() -> None:
+    """Carga la clave de Gemini desde .env, o la pide por terminal."""
+    load_dotenv()
+    if not os.getenv("GEMINI_API_KEY"):
+        os.environ["GEMINI_API_KEY"] = getpass.getpass("Pega tu GEMINI_API_KEY: ")
+
+
+def _get_client() -> genai.Client:
+    global _client
+    if _client is None:
+        configurar_api()
+        _client = genai.Client()
+    return _client
+
+
+# ============================================
+# LLAMAR A UN MODELO
+# ============================================
+
+def llamar_modelo(modelo: str, prompt: str, pregunta_id: str) -> FilaBenchmark:
+    """Llama a un modelo con un prompt y devuelve una FilaBenchmark."""
+    cliente = _get_client()
     inicio = time.time()
 
-    respuesta = cliente.models.generate_content(
-        model=modelo,
-        contents=prompt,
-        config=types.GenerateContentConfig(temperature=TEMPERATURA_BENCHMARK),
-    )
+    try:
+        respuesta = cliente.models.generate_content(
+            model=modelo,
+            contents=prompt,
+            config=types.GenerateContentConfig(temperature=TEMPERATURA_BENCHMARK),
+        )
+        elapsed_ms = int((time.time() - inicio) * 1000)
+        um = respuesta.usage_metadata
 
-    tiempo_ms = int((time.time() - inicio) * 1000)
-    uso = respuesta.usage_metadata
-    tokens_total = getattr(uso, "total_token_count", 0)
+        return FilaBenchmark(
+            pregunta_id=pregunta_id,
+            modelo=modelo,
+            elapsed_ms=elapsed_ms,
+            prompt_tokens=getattr(um, "prompt_token_count", None),
+            output_tokens=getattr(um, "candidates_token_count", None),
+            total_tokens=getattr(um, "total_token_count", None),
+            respuesta=(respuesta.text or "").strip()[:300],
+            error=None,
+        )
 
-    return (respuesta.text or "").strip(), tiempo_ms, tokens_total
+    except Exception as e:
+        return FilaBenchmark(
+            pregunta_id=pregunta_id,
+            modelo=modelo,
+            elapsed_ms=0,
+            prompt_tokens=None,
+            output_tokens=None,
+            total_tokens=None,
+            respuesta="",
+            error=str(e)[:200],
+        )
 
 
-def ejecutar_benchmark():
-    """Ejecuta los 10 casos en los 2 modelos y guarda los resultados en CSV."""
-    configurar_api()
+# ============================================
+# EJECUTAR EL BENCHMARK
+# ============================================
 
-    # Cargamos los casos de benchmark
+def ejecutar_benchmark() -> list[FilaBenchmark]:
+    """Ejecuta los casos del dataset en todos los modelos."""
     with open(DATA_DIR / "preguntas_benchmark.json", "r", encoding="utf-8") as f:
         casos = json.load(f)
 
-    resultados = []
+    filas: list[FilaBenchmark] = []
 
-    print("=" * 70)
-    print("BENCHMARK: comparando modelos")
-    print("=" * 70)
+    print("=" * 60)
+    print(f"BENCHMARK — {len(casos)} casos x {len(MODELOS_BENCHMARK)} modelos")
+    print(f"Temperatura: {TEMPERATURA_BENCHMARK}")
+    print("=" * 60)
 
     for caso in casos:
-        empleado = buscar_empleado(caso["empleado"])
-        pregunta = caso["pregunta"]
-
-        print(f"\n--- {caso['id']} ({caso['tipo']}) ---")
-        print(f"Pregunta: {pregunta}")
-
-        # Comprobamos si es una amenaza (fail-closed)
-        amenaza = analizar_amenaza(pregunta)
-
-        for modelo in MODELOS:
-            if amenaza:
-                # No llamamos al modelo, respuesta segura
-                respuesta = respuesta_segura(amenaza)
-                tiempo_ms = 0
-                tokens = 0
-                print(f"  [{modelo}] BLOQUEADO (fail-closed): {amenaza}")
+        print(f"\n--- {caso['id']} ---")
+        for modelo in MODELOS_BENCHMARK:
+            fila = llamar_modelo(modelo, caso["prompt"], caso["id"])
+            filas.append(fila)
+            if fila.error:
+                print(f"  [{modelo}] ERROR: {fila.error[:60]}")
             else:
-                # Construimos el prompt y llamamos al modelo
-                faqs = seleccionar_faqs(pregunta)
-                docs = seleccionar_docs(pregunta, faqs)
-                prompt = construir_prompt(empleado, pregunta, faqs, docs)
-                try:
-                    respuesta, tiempo_ms, tokens = llamar_modelo(modelo, prompt)
-                    print(f"  [{modelo}] {tiempo_ms} ms, {tokens} tokens")
-                except Exception as e:
-                    respuesta = f"ERROR: {e}"
-                    tiempo_ms = 0
-                    tokens = 0
-                    print(f"  [{modelo}] ERROR")
+                print(f"  [{modelo}] {fila.elapsed_ms} ms | {fila.total_tokens} tokens")
 
-            # Guardamos el resultado
-            resultados.append({
-                "id_caso": caso["id"],
-                "tipo": caso["tipo"],
-                "modelo": modelo,
-                "latencia_ms": tiempo_ms,
-                "tokens": tokens,
-                "respuesta": respuesta[:200],   # primeros 200 caracteres
-            })
+    return filas
 
-    # --- Guardamos todo en un CSV ---
-    ruta_csv = OUTPUT_DIR / "resultados_benchmark.csv"
-    with open(ruta_csv, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["id_caso", "tipo", "modelo", "latencia_ms", "tokens", "respuesta"])
-        writer.writeheader()
-        writer.writerows(resultados)
 
-    print(f"\n\n✅ Resultados guardados en: {ruta_csv}")
+# ============================================
+# TABLA DE RESULTADOS (para los entregables .md)
+# ============================================
 
-    # --- Resumen por modelo ---
-    print("\n" + "=" * 70)
-    print("RESUMEN POR MODELO")
-    print("=" * 70)
-    for modelo in MODELOS:
-        datos_modelo = [r for r in resultados if r["modelo"] == modelo and r["latencia_ms"] > 0]
-        if datos_modelo:
-            latencia_media = sum(r["latencia_ms"] for r in datos_modelo) / len(datos_modelo)
-            tokens_media = sum(r["tokens"] for r in datos_modelo) / len(datos_modelo)
+def generar_tabla(filas: list[FilaBenchmark]) -> Path:
+    """Genera una tabla markdown con las medias por modelo."""
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    path = OUTPUT_DIR / "tabla_benchmark.md"
+
+    lineas = [
+        "# Resultados del benchmark",
+        "",
+        f"- Temperatura: {TEMPERATURA_BENCHMARK}",
+        f"- Modelos: {', '.join(MODELOS_BENCHMARK)}",
+        "",
+        "## Medias por modelo",
+        "",
+        "| Modelo | Casos OK | Latencia media (ms) | Tokens medios |",
+        "|--------|:--------:|:-------------------:|:-------------:|",
+    ]
+
+    for modelo in MODELOS_BENCHMARK:
+        ok = [f for f in filas if f.modelo == modelo and not f.error]
+        if ok:
+            lat = mean(f.elapsed_ms for f in ok)
+            toks = [f.total_tokens for f in ok if f.total_tokens]
+            tok = mean(toks) if toks else 0
+            lineas.append(f"| {modelo} | {len(ok)} | {lat:.0f} | {tok:.0f} |")
+        else:
+            lineas.append(f"| {modelo} | 0 | - | - |")
+
+    # Detalle caso por caso
+    lineas.extend([
+        "", "## Detalle por caso", "",
+        "| Caso | Modelo | Latencia (ms) | Tokens |",
+        "|------|--------|:-------------:|:------:|",
+    ])
+    for f in filas:
+        if f.error:
+            lineas.append(f"| {f.pregunta_id} | {f.modelo} | ERROR | - |")
+        else:
+            lineas.append(f"| {f.pregunta_id} | {f.modelo} | {f.elapsed_ms} | {f.total_tokens} |")
+
+    path.write_text("\n".join(lineas), encoding="utf-8")
+    return path
+
+
+# ============================================
+# PUNTO DE ENTRADA
+# El import de report va aquí dentro para evitar
+# la dependencia circular (report importa FilaBenchmark de aquí).
+# ============================================
+
+def main() -> None:
+    filas = ejecutar_benchmark()
+
+    # El CSV lo genera report.py (parte de Jaime)
+    from report import guardar_csv
+    csv_path = guardar_csv(filas)
+
+    # La tabla de resultados la genera este fichero
+    tabla_path = generar_tabla(filas)
+
+    # Resumen en pantalla
+    print("\n" + "=" * 60)
+    print("RESUMEN")
+    print("=" * 60)
+    for modelo in MODELOS_BENCHMARK:
+        ok = [f for f in filas if f.modelo == modelo and not f.error]
+        if ok:
+            lat = mean(f.elapsed_ms for f in ok)
+            toks = [f.total_tokens for f in ok if f.total_tokens]
+            tok = mean(toks) if toks else 0
             print(f"\n{modelo}:")
-            print(f"  Latencia media: {latencia_media:.0f} ms")
-            print(f"  Tokens media: {tokens_media:.0f}")
+            print(f"  Casos OK: {len(ok)}/{len(filas)//len(MODELOS_BENCHMARK)}")
+            print(f"  Latencia media: {lat:.0f} ms")
+            print(f"  Tokens medios: {tok:.0f}")
+        else:
+            print(f"\n{modelo}: sin datos (todos los casos dieron error)")
+
+    print(f"\nCSV:   {csv_path}")
+    print(f"Tabla: {tabla_path}")
 
 
 if __name__ == "__main__":
-    ejecutar_benchmark()
+    main()
