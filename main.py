@@ -1,195 +1,186 @@
-import json
-from datetime import date
-from config import MODEL
-from context import get_contexto
-from prompts import build_prompt_chat, build_prompt_checklist
-from logic import actualizar_historial, MAX_TURNOS
-from state import crear_estado, guardar_dia, tareas_pendientes
-from gemini_client import safe_generate
-from validators import verificar_preguntas_json, verificar_entregables
-from error import EscenarioNoAceptado
+from config import DATA_DIR
+from logic import (
+    procesar_turno,
+    crear_estado_demo,
+    procesar_checklist,
+    inicializar_checklist,
+)
+from context import seleccion_empleado, cargar_empleados
+from validators import valid_id
+from state import guardar_estado, cargar_estado, tareas_pendientes_dias_anteriores
+
+MAX_TURNOS = 4
 
 
-def resolver_faqs_docs(contexto):
-    # Ya no dependemos de que el LLM cite IDs correctamente.
-    # Usamos directamente lo que Python ya encontró por keywords,
-    # así evitamos mostrar IDs inventados o mal recordados por el modelo.
-    faqs_texto = [f"{f['id']}({f['pregunta']})" for f in contexto["faqs_keywords"]]
-    docs_texto = [f"{d['id']}({d['titulo']})" for d in contexto["docs_keywords"]]
-    return faqs_texto, docs_texto
+def imprimir_resultado(respuesta: dict) -> None:
+    status = respuesta.get('status', 'unknown').upper()
+    message = respuesta.get('message', '')
+    print(f'[{status}]')
+    data = respuesta.get('data', {})
+    if status == 'ERROR':
+        print(message)
+        for e in data.get('errores', []):
+            print('\n -', e)
+        return
+    print(f'''
+{message}: {data.get('perfil', 'junior')}
+{'=' * 60}
+
+{data.get('respuesta', '')}
+
+Para más información contacta con {data.get('escalar')}
+
+FAQs: {chr(10).join([f.get('pregunta', '') for f in data.get('faqs', [])])}
+Docs: {chr(10).join([d.get('titulo', '') for d in data.get('docs', [])])}
+
+Latencia: {data.get('metricas')['elapsed_ms']}
+Tokens entrada: {data.get('metricas')['prompt_tokens']}
+Tokens salida: {data.get('metricas')['output_tokens']}
+''')
 
 
-def imprimir_respuesta_chat(respuesta_json, metricas, empleado, contexto):
-    faqs_legibles, docs_legibles =resolver_faqs_docs(contexto)
+def imprimir_resultado_checklist(respuesta: dict) -> None:
+    status = respuesta.get('status', 'unknown').upper()
+    message = respuesta.get('message', '')
+    print(f'[{status}] {message}\n')
+    data = respuesta.get('data', {})
+    if status == 'ERROR':
+        for e in data.get('errores', []):
+            print(' -', e)
+        return
+    print(f'''
+Nombre: {data.get('empleado')}    Día: {data.get('dia', 0)}
+{'-' * 50}
+{data.get('mensaje_resumen', '')}
+{'-' * 50}
+Tareas:
+ - {('\n - ').join(x.get('titulo', '') for x in data.get('tareas', []))}
 
-    
+--- INICIO METRICAS MENSAJE RESUMEN ---
 
-    resultado = {
-        "status": "ok",
-        "message": "Turno procesado",
-        "data": {
-            "perfil": empleado["perfil"],
-            "respuesta": respuesta_json["respuesta"],
-            "faqs": [f["id"] for f in contexto["faqs_keywords"]],
-            "docs": [d["id"] for d in contexto["docs_keywords"]],
-            "metricas": {
-                "elapsed_ms": metricas.elapsed_ms,
-                "prompt_tokens": metricas.prompt_tokens,
-                "output_tokens": metricas.output_tokens,
-                "total_tokens": metricas.total_tokens,
-            },
-        },
-    }
+Latencia: {data.get('metricas')['elapsed_ms']}
+Tokens entrada: {data.get('metricas')['prompt_tokens']}
+Tokens salida: {data.get('metricas')['output_tokens']}
 
-    print(f"\n[OK] Turno procesado: {resultado['data']['perfil']}")
-    print("===================================")
-    print(resultado["data"]["respuesta"])
-    print(f"FAQs: [{', '.join(faqs_legibles)}]")
-    print(f"Docs: [{', '.join(docs_legibles)}]")
-    print(f"latencia: {metricas.elapsed_ms}")
-    print(f"tokens entrada: {metricas.prompt_tokens}")
-    print(f"tokens salida: {metricas.output_tokens}")
-    return resultado
+--- FIN METRICAS MENSAJE RESUMEN ---
+''')
 
 
-def imprimir_respuesta_checklist(checklist, empleado, metricas=None):
-    resultado = {
-        "status": "ok",
-        "message": "Checklist creada",
-        "data": {
-            "empleado": empleado,
-            "dia": checklist["dia"],
-            "tareas": checklist["tareas"],
-            "mensaje_resumen": checklist["mensaje_resumen"],
-        },
-    }
-
-    print(f"\nNombre: {empleado['nombre']}    Día: {checklist['dia']}")
-    print("=================================")
-    print(checklist["mensaje_resumen"])
-    print("Tareas:")
-    for t in checklist["tareas"]:
-        marca = "x" if t["completado"] else " "
-        print(f" - [{marca}] {t['titulo']}")
-    return resultado
-
-def demo_1():
-    """Demo 1 — Conversación 1 turno con dev junior (emp_01)"""
-    print("Comprobando archivos...")
-    ok_preguntas, errores_preguntas = verificar_preguntas_json()
-    ok_entregables, errores_entregables = verificar_entregables()
-    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
-        print("Archivos comprobados y aceptados")
-    else:
-        print(errores_entregables, errores_preguntas)
-        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
-    print("\n=== DEMO 1 — Conversación dev junior ===")
-    pregunta = "¿A qué canales de Slack me uno?"
-    contexto = get_contexto("emp_01", 1, pregunta)
-    prompt = build_prompt_chat(contexto, pregunta, [])
-    respuesta_raw, metricas = safe_generate(prompt, model=MODEL, json_mode=True)
-    respuesta_json = json.loads(respuesta_raw)
-    imprimir_respuesta_chat(respuesta_json, metricas, contexto["empleado"], contexto)
+def demo_1() -> None:
+    print("=" * 60)
+    print("1) conversación de 1 turno (empleado tipo dev junior).")
+    print("=" * 60)
+    pregunta = "¿Cuál es el horario de entrada?"
+    user_id = 'demo'
+    error = valid_id(user_id)
+    if error:
+        raise ValueError(error)
+    empleado = seleccion_empleado(cargar_empleados(DATA_DIR / 'empleados_demo.json'), user_id)
+    state = crear_estado_demo(empleado=empleado)
+    imprimir_resultado(procesar_turno(state=state, u_message=pregunta))
 
 
-def demo_2():
-    """Demo 2 — Checklist JSON día 1"""
-    print("Comprobando archivos...")
-    ok_preguntas, errores_preguntas = verificar_preguntas_json()
-    ok_entregables, errores_entregables = verificar_entregables()
-    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
-        print("Archivos comprobados y aceptados")
-    else:
-        print(errores_entregables, errores_preguntas)
-        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
-    print("\n=== DEMO 2 — Checklist día 1 ===")
-    contexto = get_contexto("emp_01", 1, "")
-    prompt = build_prompt_checklist(contexto)
-    checklist_str, metricas = safe_generate(prompt, model=MODEL, json_mode=True)
-    checklist = json.loads(checklist_str)
-    imprimir_respuesta_checklist(checklist, contexto["empleado"], metricas)
+def demo_2() -> None:
+    print("=" * 60)
+    print("2) creacion checklist.")
+    print("=" * 60)
+    user_id = 'emp_01'
+    error = valid_id(user_id)
+    if error:
+        raise ValueError(error)
+    empleado = seleccion_empleado(cargar_empleados(DATA_DIR / 'empleados_demo.json'), user_id)
+    state = crear_estado_demo(empleado=empleado)
+    metricas = inicializar_checklist(state=state)
+    print(f'''
+--- INICIO METRICAS ASIGNACION TAREAS ---
+
+Latencia: {metricas['elapsed_ms']}
+Tokens entrada: {metricas['prompt_tokens']}
+Tokens salida: {metricas['output_tokens']}
+
+--- FIN METRICAS ASGINACION TAREAS ---
+''')
+    imprimir_resultado_checklist(procesar_checklist(state=state))
+    imprimir_resultado_checklist(procesar_checklist(state=state, dia=2))
 
 
-def demo_3():
-    """Demo 3 — Mismo mensaje con comercial vs remoto UE"""
-    print("Comprobando archivos...")
-    ok_preguntas, errores_preguntas = verificar_preguntas_json()
-    ok_entregables, errores_entregables = verificar_entregables()
-    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
-        print("Archivos comprobados y aceptados")
-    else:
-        print(errores_entregables, errores_preguntas)
-        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
-    print("\n=== DEMO 3 — Comercial vs Remoto UE ===")
-    pregunta = "¿Puedo trabajar desde otro país esta semana?"
+def demo_3() -> None:
+    print("=" * 60)
+    print("3) conversación de 1 turno (empleado tipo comercial vs remoto UE).")
+    print("=" * 60)
+    pregunta = "¿Cuál es el horario de entrada?"
+    for user in ['emp_02', 'emp_03']:
+        error = valid_id(user)
+        if error:
+            raise ValueError(error)
+        empleado = seleccion_empleado(cargar_empleados(DATA_DIR / 'empleados_demo.json'), user)
+        state = crear_estado_demo(empleado=empleado)
+        imprimir_resultado(procesar_turno(state=state, u_message=pregunta))
 
-    print("\n-- Empleado comercial (emp_02) --")
-    contexto_comercial = get_contexto("emp_02", 1, pregunta)
-    prompt_comercial = build_prompt_chat(contexto_comercial, pregunta, [])
-    respuesta_raw, metricas = safe_generate(prompt_comercial, model=MODEL, json_mode=True)
-    respuesta_json = json.loads(respuesta_raw)
-    imprimir_respuesta_chat(respuesta_json, metricas, contexto_comercial["empleado"], contexto_comercial)
+def modo_interactivo() -> None:
+    print("=" * 60)
+    print("MODO INTERACTIVO — ASISTENTE DE ONBOARDING BRIDGE SA")
+    print("=" * 60)
 
-    print("\n-- Empleado remoto UE (emp_03) --")
-    contexto_remoto = get_contexto("emp_03", 1, pregunta)
-    prompt_remoto = build_prompt_chat(contexto_remoto, pregunta, [])
-    respuesta_raw, metricas = safe_generate(prompt_remoto, model=MODEL, json_mode=True)
-    respuesta_json = json.loads(respuesta_raw)
-    imprimir_respuesta_chat(respuesta_json, metricas, contexto_remoto["empleado"], contexto_remoto)
+    user_id = input("¿Cuál es tu ID de empleado? (ej: emp_01): ")
+    error = valid_id(user_id)
+    if error:
+        raise ValueError(error)
 
-
-def modo_interactivo():
-    """Modo interactivo — el empleado hace preguntas"""
-    print("Comprobando archivos...")
-    ok_preguntas, errores_preguntas = verificar_preguntas_json()
-    ok_entregables, errores_entregables = verificar_entregables()
-    if (ok_preguntas == True and not errores_preguntas) and (ok_entregables == True and not errores_entregables):
-        print("Archivos comprobados y aceptados")
-    else:
-        print(errores_entregables, errores_preguntas)
-        raise EscenarioNoAceptado("Archivos no permitidos, revisar archivos")
-    print("\n=== ASISTENTE DE ONBOARDING BRIDGE SA ===")
-    empleado_id = input("¿Cuál es tu ID de empleado? (ej: emp_01): ")
     dia = int(input("¿En qué día de onboarding estás? (1-5): "))
 
-    pendientes = tareas_pendientes(empleado_id, dia)
+    # Si ya existe progreso guardado de este empleado, lo recuperamos
+    state = cargar_estado(user_id)
+
+    if state:
+        state["user_profile"]["dia"] = dia
+        print(f"\nSe ha recuperado tu progreso anterior, {state['user_profile'].get('nombre')}.")
+    else:
+        empleado = seleccion_empleado(cargar_empleados(DATA_DIR / 'empleados_demo.json'), user_id)
+        state = crear_estado_demo(empleado=empleado, dia=dia)
+        metricas = inicializar_checklist(state=state)
+        print(f'''
+--- INICIO METRICAS ASIGNACION TAREAS ---
+
+Latencia: {metricas['elapsed_ms']}
+Tokens entrada: {metricas['prompt_tokens']}
+Tokens salida: {metricas['output_tokens']}
+
+--- FIN METRICAS ASIGNACION TAREAS ---
+''')
+
+    pendientes = tareas_pendientes_dias_anteriores(state, dia)
     if pendientes:
-        print("\n Tienes tareas pendientes de días anteriores: ")
+        print("\nTienes tareas pendientes de días anteriores:")
         for t in pendientes:
-            print(f" - [Día {t['dia_origen']}] {t['titulo']}")
+            print(f" - [Día {t['dia']}] {t['titulo']}")
 
-    contexto = get_contexto(empleado_id, dia, "")
-    prompt = build_prompt_checklist(contexto, pendientes)
-    checklist_str, _ = safe_generate(prompt, model=MODEL, json_mode=True)
-    checklist = json.loads(checklist_str)
-    imprimir_respuesta_checklist(checklist, contexto["empleado"])
-    estado = crear_estado(empleado_id, dia, checklist["tareas"])
+    imprimir_resultado_checklist(procesar_checklist(state=state, dia=dia))
 
-    print(f"\nHola {contexto['empleado']['nombre']}, puedes hacerme hasta {MAX_TURNOS} preguntas.\n")
+    print(f"\nPuedes hacerme hasta {MAX_TURNOS} preguntas (escribe 'salir' para terminar antes).\n")
 
-    while estado.turnos_restantes > 0:
+    turno = 0
+    while turno < MAX_TURNOS:
         pregunta = input("Tu pregunta: ")
-        contexto = get_contexto(empleado_id, dia, pregunta)
-        prompt = build_prompt_chat(contexto, pregunta, estado.historial)
-        respuesta_raw, metricas = safe_generate(prompt, model=MODEL, json_mode=True)
-        respuesta_json = json.loads(respuesta_raw)
-
-        imprimir_respuesta_chat(respuesta_json, metricas, contexto["empleado"], contexto)
-
-        continuar = actualizar_historial(estado, pregunta, respuesta_json["respuesta"])
-        if not continuar:
+        if pregunta.strip().lower() == "salir":
             break
+        imprimir_resultado(procesar_turno(state=state, u_message=pregunta))
+        turno += 1
 
-    from logic import preguntar_tareas_completadas
-    preguntar_tareas_completadas(estado)
-    guardar_dia(estado)
-    print("\n Fin de la conversación. ¡Mucho ánimo!")
+    guardar_estado(user_id, state)
+    print("\nFin de la conversación. ¡Mucho ánimo!")
+
+
+# def main() -> None:
+#     demo_1()
+#     demo_2()
+#     demo_3()
 
 
 if __name__ == "__main__":
     print("¿Qué quieres ejecutar?")
     print("1 — Demo conversación dev junior")
-    print("2 — Demo checklist día 1")
+    print("2 — Demo checklist")
     print("3 — Demo comercial vs remoto UE")
     print("4 — Modo interactivo")
 

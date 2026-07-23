@@ -1,140 +1,123 @@
 import json
-import os
+from pathlib import Path
+from config import (DOCS,FAQS,DEFAULT_CONTACT)
 
-def get_empresa():
-    with open("data/empresa.json", "r", encoding="utf-8") as f:
-        return json.load(f)
+def cargar_empleados(ruta:Path)->list[dict]:
+    with ruta.open(encoding='utf-8') as e:
+        data=json.load(e)
+    if not isinstance(data,list):
+        raise ValueError ('empleados_demo.json debe ser una lista')
+    return data
+
+def cargar_faq(ruta:Path)->list[dict]:
+    with ruta.open(encoding='utf-8') as f:
+        data=json.load(f)
+    if not isinstance(data,list):
+        raise ValueError ('empleados_demo.json debe ser una lista')
+    return data
+
+def cargar_docs(ruta:Path)->list[dict]:
+    with ruta.open(encoding='utf-8') as d:
+        data=json.load(d)
+    if not isinstance(data,list):
+        raise ValueError ('empleados_demo.json debe ser una lista')
+    return data
+
+def cargar_empresa(ruta:Path)->dict:
+    with ruta.open(encoding='utf-8') as d:
+        data=json.load(d)
+    if not isinstance(data,dict):
+        raise ValueError ('empresa.json debe ser una lista')
+    return data
+
+def seleccion_faq(faqs:list[dict],pregunta:str,max_faq:int = FAQS)-> list[dict]:
+    """Seleccion de faqs relevantes
+        
+        Parámteros:
+        - faqs: lista de todas las faqs
+        - pregunta: pregunta del usuario
+        - max_faq: número máximo de faqs a seleccionar"""
+    quest=pregunta.strip().lower() #Limpiamos la pregunta para que sea más fácil comparar
+    orden:list[tuple[int,dict]]=[] #Creamos la lista para ordenar las faqs segun importancia
+    for f in faqs:
+        score=0 #score representa el grado de importancia
+        for t in f.get('tags',[]): #primero comprobamos si alguno de los tags de la faq se encuentra en la pregunta
+            if t.lower() in quest:
+                score+=2 #se le asigna un nivel intermedio de importancia
+        if f.get('pregunta','').strip().lower() in quest: #Comprobamos si la pregunta tiene coincidencia directa con algún faq
+            score+=3 #se le asigna un nivel alto de importancia
+        if score>0: #Seleccionamos solo aquellas que tengan alguna relevancia para la pregunta
+            orden.append((score,f))
+    orden.sort(key=lambda x: x[0],reverse=True) #Las ordenamos según importancia
+    return [o[1] for o in orden[:max_faq]] #devolvemos solo la faq (el nivel de importancia ya no interesa)
+
+def seleccion_doc(docs:list[dict],*,faqs:list[dict] | None=None,pregunta:str,max_doc:int = DOCS)-> list[dict]:
+    """Seleccion de documentos relevantes
     
-#--- Función: get_doc_por_id ---
-# Busca un documento concreto por su ID. La reutilizamos para
-# enlazar cada FAQ con su documento asociado (doc_id).
-def get_doc_por_id(doc_id):
-    with open("data/onboarding_docs.json", "r", encoding="utf-8") as f:
-        docs = json.load(f)
-    return next((d for d in docs if d["id"] == doc_id), None)
+    Parámteros:
+    - docs: lista de todos los documentos
+    - faqs: lista de faqs de relevancia para la pregunta
+    - max_doc: número máximo de documentos a seleccionar"""
+    quest=pregunta.strip().lower() #Limpiamos la pregunta para que sea más fácil comparar
+    orden:list[tuple[int,dict]]=[] #Creamos la lista para ordenar las faqs segun importancia
+    faq_doc_list=[] #Creamos una lista con los documentos utilizados para las faqs seleccionadas previamente
+    if faqs:
 
+        #Añadimos los id del documento evitando duplicados (varios faqs hacen referencia al mismo documento)
+        for f in faqs:
+            ref=f.get('doc_id')
+            if ref not in faq_doc_list:
+                faq_doc_list.append(ref)
+    #Empezamos clasificación 
+    for d in docs:
+        score=0
+        if d.get('id') in faq_doc_list: #Máxima importancia a los documentos que son utilizados en los faqs seleccionados
+            score=7 
 
-#--- Función: get_faqs_por_keywords ---
-# Busca FAQs cuyos tags coincidan con palabras de la pregunta.
-# Además, adjunta el documento completo asociado a cada FAQ (vía doc_id)
-# para dar más contexto al LLM, aunque ese doc no coincida por sus propios tags.
-def get_faqs_por_keywords(pregunta):
-    with open("data/faq_onboarding.json", "r", encoding="utf-8") as f:
-        faqs = json.load(f)
-    palabras = pregunta.lower().split()
-    resultado = []
-    for faq in faqs:
-        if any(palabra in faq["tags"] for palabra in palabras):
-            faq_con_doc = dict(faq)  # copia para no mutar el original
-            faq_con_doc["doc_asociado"] = get_doc_por_id(faq["doc_id"])
-            resultado.append(faq_con_doc)
-    return resultado
+        #Misma idea que con los faqs pero comparando con titulo en vez de con pregunta
+        else:
+            for t in d.get('tags',[]):
+                if t.lower() in quest:
+                    score+=2
+            if d.get('titulo','').strip().lower() in quest:
+                score+=3
+        if score>0:
+            orden.append((score,d))
+    orden.sort(key=lambda x: x[0],reverse=True)
+    return [o[1] for o in orden[:max_doc]]
 
-#--- Función 1: get_empleado---
-# Recibe el ID del empleado y devuelve su ficha completa en JSON.
-# ¿Por qué una función separada? La lógica se reutiliza en varios lugares.
+def seleccion_empleado(emps:list[dict],emp_id:str)->dict|None:
+    """Devuelve el diccionario del empleado según su id"""
+    for e in emps:
+        if e.get('id')==emp_id:
+            return e
+def seleccion_escalado(*, empresa: dict, doc: dict) -> str:
+    """Seleccionar departamento a escalar en funcion del documento"""
+    contact = empresa.get('contactos', {}) #Obtenemos todos los contactos de la empresa
 
-def get_empleado(empleado_id):
-    with open("data/empleados_demo.json", "r", encoding="utf-8") as f:
-        empleados =json.load(f)
-    for x in empleados:
-        if x["id"] == empleado_id:
-            return x
-    return None
-
-#--- Función 2: get_docs_por_departamento---
-# Devuelve todos los documentos ordenados por importancia.
-# El departamento propio del empleado va primero, luego people, it, etc.
-# ¿Por qué este orden? PAra que el LLM priorice lo mas relevante
-
-
-def get_docs_por_departamento(departamento):
-    with open("data/onboarding_docs.json", "r", encoding="utf-8") as f:
-        docs =json.load(f)
-        #Orden de importancia: Primero el departamento del empleado.
-        #Luego los genericos que aplican a todos.
-    orden = [departamento, "people", "it", "engineering", "sales", "operations"]
-    resultado =[] 
-    ids_añadidos = set () # Set para evitar duplicados (cada doc aparece una sola vez)
-    for dpt in orden:
-        # Buscamos todos los docs de ese departamento
-        for x in docs:
-            if x["departamento"] == dpt and x["id"] not in ids_añadidos:
-                resultado.append(x)
-                ids_añadidos.add(x["id"]) # Marcamos como añadido.
-    return resultado
-
-#--- Función 3: get_docs_por_keywords---
-# Buscamos documentos cuyos "tags" coincidan con palabras de la pregunta.
-# ¿Por qué? Porque no queremos mandar TODOS los docs al LLM en cada pregunta.
-# Eso sería caro y lento. Solo mandamos los relevantes.
-def get_docs_por_keywords(pregunta):
-    with open("data/onboarding_docs.json", "r", encoding="utf-8") as f:
-        docs= json.load(f)
-    palabras= pregunta.lower().split()
-    acumulador_tag = []
-    for x in docs:
-        if any(palabra in x["tags"] for palabra in palabras):
-            acumulador_tag.append(x)
-    return acumulador_tag
-
-#--- Función 4: get_departamento_relevante---
-# DEvuelve el pdeparta,emtp deñ primer doc encontrado por keywords.
-# ¿Por qué el primero? Porque es el más relevante para la pregunta.
-# Este dato lo usará prompts.py para saber a quién derivar.
-def get_departamento_relevante(docs_keywords, faqs_keywords=None):
-    if docs_keywords:
-        return docs_keywords[0]["departamento"]
-    if faqs_keywords:
-        for faq in faqs_keywords:
-            doc = faq.get("doc_asociado")
-            if doc:
-                return doc["departamento"]
-    return None
-
-#---Función 5: get_contexto---
-# Función principal del módulo. Une todo lo anterior en un solo diccionario.
-# Este diccionario es lo que recibe promppts.py para construir el prompt.
-def get_contexto(empleado_id, dia, pregunta):
-    empleado = get_empleado (empleado_id)
-    departamento =empleado ["departamento"]
-    docs_dpto =get_docs_por_departamento(departamento)
-    docs_keywords = get_docs_por_keywords (pregunta)
-    faqs_keywords = get_faqs_por_keywords(pregunta)
-    departamento_relevante = get_departamento_relevante(docs_keywords, faqs_keywords)
-    empresa= get_empresa()
-
-# Mapeamos cada departamento al ID de su doc de primeros 5 días.
-# Usamos un diccionario en vez de if/elif por limpieza y extensión.
-    doc_dia_map= {
-        "engineering": "doc_eng_01",
-        "sales": "doc_sales_01",
-        "operations" :"doc_ops_01"
-    }
-    doc_dia_id = doc_dia_map.get(departamento)
-    doc_dia =next((d for d in docs_dpto if d["id"] == doc_dia_id), None)
-    # next() recorre la lista y devuelve el primero que cumple la condicion.
-    # El segundo argumento (None) es el valor por defecto si no encuentra nada.
-
-    return {
-        "empleado": empleado,
-        "dia": dia,
-        "doc_dia" : doc_dia,
-        "docs_departamento" : docs_dpto,
-        "docs_keywords" : docs_keywords,
-        "faqs_keywords" : faqs_keywords,
-        "departamento_relevante" : departamento_relevante,
-        "empresa" : empresa
-    }
-
-if __name__ == "__main__":
-    ctx =get_contexto("emp_01", 1, "Canales de Slack")
-    print("===EMPLEADO===")
-    print(ctx["empleado"])
-    print("\n===DIA===")
-    print(ctx["dia"])
-    print("\n===DOC DEL DIA===")
-    print(ctx["doc_dia"])
-    print("\n===DOCS POR KEYWORDS===")
-    for d in ctx["docs_keywords"]:
-        print(f"-{d['id']}: {d['titulo']}")
+    #Limpiamos los datos proporcionados
+    cuerpo = doc['cuerpo'].lower().strip()
+    id_doc = doc['id'].lower().strip()
+    departamento = doc['departamento'].lower().strip()
+    titulo = doc['titulo'].lower().strip()
+    tags = [t.lower().strip() for t in doc['tags']] if isinstance(doc['tags'], list) else [] #como tags es una lista hay que acceder a cada dato individiualmente
+    for k in contact: #Comporbamos para cada contacto
+        k_clean = k.lower().strip() #limpuamos nombre de contacto
+        if contact.get(k) in cuerpo: #Antes que nada miramos si el documento nos indica el correo al que escalar
+            return contact.get(k) #De ser así devolvemos ese correo sin cuestionar nada más
+        if k == DEFAULT_CONTACT: #Saltamos comprobaciones del contacto por defecto ya que a ese siempre se escala si no hay nadie más al que acudir
+            continue
+        if ( #Comprobamos en todos los sitios del documento si se hace referencia al contacto
+            k_clean in cuerpo  
+            or k_clean in tags
+            or k_clean in titulo
+            or k_clean in id_doc
+            or k_clean == departamento
+        ):
+            return contact.get(k) #En cuento haya una referencia devolvemos el correo para ahorrar cálculos inecesarios
+            
+    return contact.get(DEFAULT_CONTACT) #Como ya dijimos, si no hay coincidencias devolvemos el correo de contacto por defecto
+def lista_empleados(ruta:Path)->list[str]:
+    """Devuelve una lista con los id de los empleados"""
+    empleados=cargar_empleados(ruta=ruta)
+    return [e.get('id') for e in empleados]
